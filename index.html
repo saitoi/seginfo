@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SegInfo — Criptografia, IPsec e TLS</title>
+  <style>
+    body { font-family: Georgia, serif; font-size: 16px; color: #000; background: #fff; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1 { font-size: 1.8em; border-bottom: 2px solid #000; padding-bottom: 6px; margin-top: 40px; }
+    h2 { font-size: 1.4em; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 32px; }
+    h3 { font-size: 1.1em; margin-top: 24px; }
+    h4 { font-size: 1em; margin-top: 16px; }
+    code { font-family: monospace; background: #f4f4f4; padding: 1px 4px; border-radius: 2px; }
+    pre { background: #f4f4f4; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.9em; line-height: 1.4; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 0.9em; }
+    th, td { border: 1px solid #aaa; padding: 6px 10px; text-align: left; }
+    th { background: #f0f0f0; font-weight: bold; }
+    .box { border: 1px solid #888; padding: 10px 14px; margin: 12px 0; border-radius: 2px; }
+    .term { font-weight: bold; }
+    .note { font-style: italic; color: #333; font-size: 0.95em; }
+    .diagram { font-family: monospace; font-size: 0.88em; background: #fafafa; border: 1px solid #ccc; padding: 12px; line-height: 1.5; overflow-x: auto; white-space: pre; }
+    ul, ol { margin: 8px 0; padding-left: 24px; }
+    li { margin: 3px 0; }
+    details { border: 1px solid #ccc; border-radius: 2px; padding: 6px 10px; margin: 8px 0; }
+    summary { cursor: pointer; font-weight: bold; }
+    nav a { margin-right: 14px; font-size: 0.9em; }
+    .toc { background: #f9f9f9; border: 1px solid #ccc; padding: 12px 20px; margin-bottom: 32px; }
+    .toc ul { margin: 4px 0; }
+    .toc li { margin: 2px 0; }
+    .caps { font-variant: small-caps; }
+    .center { text-align: center; }
+
+    /* floating TOC */
+    #toc-float { position: fixed; top: 14px; right: 14px; z-index: 1000; }
+    #toc-btn {
+      background: #fff; border: 1px solid #555; padding: 5px 10px;
+      cursor: pointer; font-size: 1.1em; border-radius: 3px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.15);
+    }
+    #toc-btn:hover { background: #f0f0f0; }
+    #toc-panel {
+      display: none; position: absolute; right: 0; top: 36px;
+      background: #fff; border: 1px solid #888; padding: 12px 18px;
+      min-width: 280px; max-height: 82vh; overflow-y: auto;
+      box-shadow: 2px 4px 12px rgba(0,0,0,0.18); border-radius: 3px;
+    }
+    #toc-panel.open { display: block; }
+    #toc-panel strong { display: block; margin-bottom: 6px; }
+    #toc-panel ul { margin: 3px 0; padding-left: 16px; }
+    #toc-panel li { margin: 2px 0; }
+    #toc-panel a { font-size: 0.88em; text-decoration: none; color: #000; }
+    #toc-panel a:hover { text-decoration: underline; }
+
+    /* Q&A section */
+    .qa-item { border-left: 3px solid #888; padding-left: 14px; margin: 20px 0; }
+    .qa-item .question { font-weight: bold; margin-bottom: 6px; }
+    .qa-item .answer { margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<h1>Segurança da Informação — Criptografia, IPsec e TLS</h1>
+<p style="margin-top: 6px;"><span class="note">Resumo expandido com base nos slides e apostila da disciplina (2026/1).</span></p>
+
+<div id="toc-float">
+  <button id="toc-btn" onclick="toggleToc()" title="Sumário">☰</button>
+  <nav id="toc-panel">
+    <strong>Sumário</strong>
+    <ul>
+      <li><a href="#simetrica">1. Criptografia Simétrica</a>
+        <ul>
+          <li><a href="#fluxo-bloco">1.1 Cifras de Fluxo vs. Bloco</a></li>
+          <li><a href="#confusao-difusao">1.2 Confusão e Difusão</a></li>
+          <li><a href="#feistel">1.3 Rede de Feistel</a></li>
+          <li><a href="#parametros">1.4 Parâmetros de Segurança</a></li>
+          <li><a href="#des">1.5 DES</a></li>
+          <li><a href="#avalanche">1.6 Efeito Avalanche</a></li>
+          <li><a href="#3des">1.7 3DES</a></li>
+          <li><a href="#aes">1.8 AES</a></li>
+          <li><a href="#modos">1.9 Modos de Operação</a></li>
+        </ul>
+      </li>
+      <li><a href="#hash">2. Funções Hash, MACs e Assinaturas</a>
+        <ul>
+          <li><a href="#hash-conceito">2.1 Função Hash</a></li>
+          <li><a href="#hash-integridade">2.2 Integridade com Hash</a></li>
+          <li><a href="#mac">2.3 MAC e HMAC</a></li>
+          <li><a href="#assinatura">2.4 Assinaturas Digitais</a></li>
+          <li><a href="#hash-propriedades">2.5 Resistências e Paradoxo do Aniversário</a></li>
+          <li><a href="#sha">2.6 SHA-512</a></li>
+        </ul>
+      </li>
+      <li><a href="#assimetrica">3. Criptografia Assimétrica</a>
+        <ul>
+          <li><a href="#chave-publica">3.1 Ideia de Chave Pública</a></li>
+          <li><a href="#rsa">3.2 RSA</a></li>
+          <li><a href="#dh">3.3 Diffie-Hellman</a></li>
+          <li><a href="#mitm">3.4 Ataque Man-in-the-Middle</a></li>
+        </ul>
+      </li>
+      <li><a href="#ipsec">4. IPsec</a>
+        <ul>
+          <li><a href="#ah-esp">4.1 AH e ESP</a></li>
+          <li><a href="#sa">4.2 Associação de Segurança (SA)</a></li>
+          <li><a href="#sad-spd">4.3 SAD e SPD</a></li>
+          <li><a href="#modos-ipsec">4.4 Modo Transporte e Túnel</a></li>
+          <li><a href="#ike">4.5 IKE</a></li>
+        </ul>
+      </li>
+      <li><a href="#tls">5. TLS</a>
+        <ul>
+          <li><a href="#tls-arch">5.1 Arquitetura</a></li>
+          <li><a href="#tls-sessao">5.2 Sessão vs. Conexão</a></li>
+          <li><a href="#tls-record">5.3 Record Protocol</a></li>
+          <li><a href="#handshake">5.4 Handshake</a></li>
+          <li><a href="#heartbleed">5.5 Heartbeat e Heartbleed</a></li>
+          <li><a href="#tls-ipsec">5.6 TLS vs. IPsec</a></li>
+        </ul>
+      </li>
+      <li><a href="#comparacoes">6. Comparações Essenciais</a></li>
+      <li><a href="#revisao">7. Perguntas de Revisão</a></li>
+    </ul>
+  </nav>
+</div>
+
+<!-- ============================================================ -->
+<h1 id="simetrica">1. Criptografia Simétrica</h1>
+
+<p>A <span class="term">criptografia simétrica</span> é o modelo em que emissor e receptor compartilham uma mesma chave secreta, usada tanto para cifrar quanto para decifrar. É a base dos algoritmos DES, 3DES e AES.</p>
+
+<h2 id="fluxo-bloco">1.1 Cifras de Fluxo vs. Cifras de Bloco</h2>
+
+<table>
+  <tr><th></th><th>Cifra de Fluxo</th><th>Cifra de Bloco</th></tr>
+  <tr><td><strong>Unidade</strong></td><td>Bit ou byte por vez</td><td>Bloco inteiro (64 ou 128 bits)</td></tr>
+  <tr><td><strong>Mecanismo</strong></td><td>XOR com fluxo de chaves pseudoaleatório</td><td>Transformação estruturada do bloco inteiro</td></tr>
+  <tr><td><strong>Ideal</strong></td><td>One-time pad (inquebr. se chave verdadeiramente aleat.)</td><td>AES (padrão moderno)</td></tr>
+  <tr><td><strong>Limitação</strong></td><td>Fluxo precisa ser compartilhado via canal seguro</td><td>Mensagens longas exigem modos de operação</td></tr>
+  <tr><td><strong>Uso</strong></td><td>Transmissão contínua, streaming</td><td>Arquivos, discos, redes, protocolos</td></tr>
+</table>
+
+<div class="diagram">Cifra de Fluxo:
+  Chave ──▶ Gerador de fluxo ──▶ k₁ k₂ k₃ ...
+  m₁ m₂ m₃ ... ──XOR──▶ c₁ c₂ c₃ ...
+
+Cifra de Bloco:
+  Texto claro (bloco de 128 bits) ──▶ Algoritmo + Chave ──▶ Texto cifrado (128 bits)</div>
+
+<h2 id="confusao-difusao">1.2 Confusão e Difusão (Shannon)</h2>
+
+<p>Claude Shannon formulou dois princípios fundamentais para cifras seguras:</p>
+
+<table>
+  <tr><th>Princípio</th><th>Objetivo</th><th>Como é implementado</th></tr>
+  <tr><td><strong>Difusão</strong></td><td>Espalhar a influência de cada bit do texto claro por muitos bits do texto cifrado; dissociar estrutura estatística</td><td>Permutações, expansões, rotações de bits</td></tr>
+  <tr><td><strong>Confusão</strong></td><td>Tornar complexa a relação entre chave e texto cifrado; conhecer parte da saída não revela a chave</td><td>Substituições não-lineares (S-boxes)</td></tr>
+</table>
+
+<p>Exemplo matemático de difusão: para mensagem M = m₁, m₂, m₃, ...</p>
+<pre>  y_n = ( Σ m_(n+i), i=1..k ) mod 26</pre>
+<p>Onde k letras do texto claro influenciam cada letra do texto cifrado, aproximando as frequências do texto cifrado de uma distribuição uniforme.</p>
+
+<details>
+  <summary>Ponto-chave: Difusão ≠ Confusão</summary>
+  <p><strong>Difusão</strong> esconde padrões do texto claro — um único bit da entrada deve afetar muitos bits da saída. <strong>Confusão</strong> esconde a relação entre a chave e o texto cifrado, dificultando a recuperação da chave mesmo com acesso a muitos pares de texto claro/cifrado. Uma cifra de bloco segura precisa dos dois princípios combinados.</p>
+</details>
+
+<h2 id="feistel">1.3 Rede de Feistel</h2>
+
+<p>A <span class="term">rede de Feistel</span> é uma estrutura clássica para cifras de bloco que permite criar transformações reversíveis mesmo quando a função interna de rodada não é reversível. Foi proposta por Horst Feistel com base em Shannon (1945) e é usada no DES.</p>
+
+<h3>Estrutura de uma rodada</h3>
+<p>O bloco de entrada (2w bits) é dividido em metades L₀ e R₀. Para cada rodada i:</p>
+<pre>  L_i = R_(i-1)
+  R_i = L_(i-1) ⊕ F(R_(i-1), K_i)</pre>
+
+<div class="diagram">        L_(i-1)         R_(i-1)
+           │                │
+           │           ┌────▼────┐
+           │           │  F(·,Kᵢ) │◀── Kᵢ (subchave)
+           │           └────┬────┘
+           │               XOR ◀──────── L_(i-1)
+           │                │
+        R_i = L_(i-1)    L_i = R_(i-1)</div>
+
+<p>A <strong>decriptação usa a mesma estrutura</strong>, apenas aplicando as subchaves em ordem inversa (K_n, K_(n-1), ..., K_1). Isso simplifica implementações em hardware.</p>
+
+<h3>Vantagens</h3>
+<ul>
+  <li>A função F pode ser qualquer função — não precisa ser inversível.</li>
+  <li>Encriptação e decriptação usam o mesmo circuito.</li>
+  <li>Várias rodadas acumulam difusão e confusão progressivamente.</li>
+</ul>
+
+<h2 id="parametros">1.4 Parâmetros que Afetam a Segurança</h2>
+
+<table>
+  <tr><th>Parâmetro</th><th>Efeito</th><th>Exemplo</th></tr>
+  <tr><td><strong>Tamanho do bloco</strong></td><td>Bloco maior → menos repetição de padrões; maior complexidade</td><td>DES: 64 bits; AES: 128 bits</td></tr>
+  <tr><td><strong>Tamanho da chave</strong></td><td>Chave maior → mais resistente a força bruta</td><td>DES: 56 bits (inseguro); AES: 128/192/256 bits</td></tr>
+  <tr><td><strong>Número de rodadas</strong></td><td>Mais rodadas → mais difusão acumulada; mais resistência à criptoanálise</td><td>DES: 16 rodadas</td></tr>
+  <tr><td><strong>Escalonamento de chaves</strong></td><td>Escalonamento fraco permite relações previsíveis entre subchaves</td><td>Cada rodada usa subchave K_i derivada de K</td></tr>
+</table>
+
+<h2 id="des">1.5 DES — Data Encryption Standard</h2>
+
+<p>O DES foi o padrão dominante por décadas. Usa rede de Feistel com 16 rodadas, blocos de 64 bits e chave de <strong>56 bits efetivos</strong> (64 bits totais, 8 bits de paridade não participam da criptografia).</p>
+
+<h3>Função de rodada do DES</h3>
+
+<div class="diagram">  R de 32 bits
+       │
+  ┌────▼────┐
+  │ Expansão │  32 → 48 bits
+  └────┬────┘
+       │
+      XOR ◀──── Kᵢ (48 bits, subchave da rodada)
+       │
+  ┌────▼────┐
+  │  8 S-boxes │  48 → 32 bits  (substituição não-linear)
+  └────┬────┘
+       │
+  ┌────▼────┐
+  │ Permutação │
+  └────┬────┘
+       │
+    f(R, Kᵢ)</div>
+
+<p>O texto claro passa por uma <em>permutação inicial</em>, 16 rodadas Feistel e uma <em>permutação final inversa</em>. As S-boxes são o núcleo da confusão.</p>
+
+<h3>Por que o DES ficou inseguro</h3>
+<p>A chave de 56 bits gera 2⁵⁶ ≈ 7,2 × 10¹⁶ possibilidades. Com hardware moderno e paralelismo, um ataque de força bruta torna-se viável. A estrutura conceitual do DES (Feistel, S-boxes, avalanche) continua importante para estudo, mas <strong>não deve ser usado em produção</strong>.</p>
+
+<h2 id="avalanche">1.6 Efeito Avalanche</h2>
+
+<p>O <span class="term">efeito avalanche</span> é uma propriedade desejável: uma pequena alteração na entrada (um único bit) deve causar uma grande alteração na saída — idealmente, cerca de metade dos bits de saída deve mudar.</p>
+
+<div class="diagram">  Texto claro A: 10110010 ... ──▶ Cifra ──▶ Cifrado A
+  Texto claro B: 10110011 ... ──▶ Cifra ──▶ Cifrado B
+        (1 bit diferente)                  (muitos bits diferentes)</div>
+
+<p>Esse efeito impede que atacantes façam previsões sobre a saída baseados em pequenas variações da entrada. Alcançado pelo acúmulo de difusão ao longo das rodadas.</p>
+
+<h2 id="3des">1.7 Triple DES (3DES)</h2>
+
+<p>O 3DES surgiu como solução de transição, aumentando a segurança do DES sem abandoná-lo. Aplica o DES três vezes na sequência <strong>EDE (Encripta–Decripta–Encripta)</strong>:</p>
+
+<pre>  C = E_K3 ( D_K2 ( E_K1 (P) ) )</pre>
+
+<p>O uso da decriptação no meio não tem a função de "desfazer" a cifra — foi escolhido para manter compatibilidade com sistemas DES antigos (se K1 = K2 = K3, o 3DES se comporta como DES simples). Com K1 = K3 ≠ K2, obtém-se 112 bits de segurança efetivos.</p>
+
+<p class="note">O 3DES é mais lento que o AES e foi substituído em novos sistemas. Está depreciado na maioria dos padrões modernos.</p>
+
+<h2 id="aes">1.8 AES — Advanced Encryption Standard</h2>
+
+<p>O AES, baseado no algoritmo <span class="term">Rijndael</span>, foi selecionado pelo NIST em 2001. Diferentemente do DES, o AES usa uma <strong>rede de substituição-permutação (SPN)</strong>, não Feistel.</p>
+
+<table>
+  <tr><th>Variante</th><th>Tamanho de bloco</th><th>Tamanho de chave</th><th>Rodadas</th></tr>
+  <tr><td>AES-128</td><td>128 bits</td><td>128 bits</td><td>10</td></tr>
+  <tr><td>AES-192</td><td>128 bits</td><td>192 bits</td><td>12</td></tr>
+  <tr><td>AES-256</td><td>128 bits</td><td>256 bits</td><td>14</td></tr>
+</table>
+
+<p>Operações internas por rodada: substituição de bytes (SubBytes), deslocamento de linhas (ShiftRows), mistura de colunas (MixColumns), adição da chave de rodada (AddRoundKey). Para prova conceitual, o essencial é que <strong>AES substituiu o DES como padrão moderno</strong> com blocos de 128 bits e chaves muito maiores.</p>
+
+<div class="diagram">Claude Shannon (1945)
+       │
+       ▼ cifras de produto
+  ┌────────────┬──────────────────────┐
+  │ Rede de Feistel               SPN │
+  │ DES → 3DES          Rijndael → AES│
+  └────────────┴──────────────────────┘</div>
+
+<h2 id="modos">1.9 Modos de Operação: ECB, CBC, CTR, GCM</h2>
+
+<p>Uma cifra de bloco opera sobre blocos de tamanho fixo. Para mensagens longas, é necessário um <span class="term">modo de operação</span> que defina como os blocos são encadeados.</p>
+
+<table>
+  <tr><th>Modo</th><th>Ideia</th><th>Problema</th></tr>
+  <tr><td><strong>ECB</strong></td><td>Cifra cada bloco independentemente</td><td>Blocos iguais produzem cifrados iguais — vaza padrões. Inseguro para dados estruturados.</td></tr>
+  <tr><td><strong>CBC</strong></td><td>XOR do bloco claro com bloco cifrado anterior antes de cifrar; usa IV no primeiro bloco</td><td>Sequencial (não paralelizável); erros propagam; IV deve ser imprevisível.</td></tr>
+  <tr><td><strong>CTR</strong></td><td>Cifra uma sequência de contadores (nonce + contador) e combina com a mensagem por XOR</td><td>Não oferece autenticação; nonce não pode ser reutilizado com a mesma chave.</td></tr>
+  <tr><td><strong>GCM</strong></td><td>CTR + autenticação GHASH; gera uma tag de autenticação sobre o texto cifrado</td><td>Implementação incorreta pode ser catastrófica; nonce único essencial.</td></tr>
+</table>
+
+<div class="diagram">ECB:
+  P₁ ──▶ E_K ──▶ C₁      P₂ ──▶ E_K ──▶ C₂   (independente)
+
+CBC:
+  IV ──XOR── P₁ ──▶ E_K ──▶ C₁ ──XOR── P₂ ──▶ E_K ──▶ C₂
+
+CTR:
+  (nonce||ctr₁) ──▶ E_K ──XOR── P₁ ──▶ C₁
+  (nonce||ctr₂) ──▶ E_K ──XOR── P₂ ──▶ C₂
+
+GCM:
+  CTR acima ──▶ texto cifrado
+  GHASH(texto cifrado + AAD, H) ──▶ tag de autenticação</div>
+
+<details>
+  <summary>Por que o ECB não deve ser usado?</summary>
+  <p>Se dois blocos de texto claro são idênticos, seus blocos cifrados também são idênticos no ECB. Isso revela padrões estruturais da mensagem. O exemplo clássico é cifrar uma imagem bitmap no modo ECB: as áreas uniformes da imagem original continuam visíveis no resultado cifrado, porque regiões com a mesma cor produzem o mesmo bloco cifrado.</p>
+</details>
+
+<!-- ============================================================ -->
+<h1 id="hash">2. Funções Hash, MACs e Assinaturas Digitais</h1>
+
+<h2 id="hash-conceito">2.1 Função Hash</h2>
+
+<p>Uma <span class="term">função hash</span> recebe uma mensagem de tamanho variável M e produz um valor de tamanho fixo:</p>
+<pre>  h = H(M)</pre>
+<p>O valor h é chamado de <em>hash</em>, <em>digest</em> ou <em>resumo</em>. A função adiciona <strong>padding</strong> quando a entrada não é múltipla do tamanho desejado. Propriedades gerais:</p>
+<ul>
+  <li>Saída deve parecer aleatória e ser uniformemente distribuída.</li>
+  <li><strong>Efeito avalanche</strong>: pequena mudança em M altera bastantes bits de h.</li>
+  <li>Objetivo primário: verificação de <strong>integridade</strong>.</li>
+</ul>
+
+<h3>Propriedades de Hash Criptográfico</h3>
+<ul>
+  <li><strong>Mão única (one-way)</strong>: dado h, é computacionalmente inviável encontrar M tal que H(M) = h.</li>
+  <li><strong>Livre de colisão</strong>: inviável encontrar M₁ ≠ M₂ tais que H(M₁) = H(M₂).</li>
+  <li>Computacionalmente inviável de quebrar com eficiência maior que força bruta.</li>
+</ul>
+
+<h2 id="hash-integridade">2.2 Integridade com Hash e o Problema da Autenticação</h2>
+
+<h3>Verificação de integridade</h3>
+<ol>
+  <li>Emissor calcula h = H(M).</li>
+  <li>Emissor transmite M + h.</li>
+  <li>Receptor recalcula H(M_recebido) e compara com h recebido.</li>
+  <li>Divergência → mensagem ou hash adulterada.</li>
+</ol>
+
+<p><strong>Problema:</strong> um adversário (man-in-the-middle) pode interceptar, alterar M e recalcular h. Hash simples <em>não garante autenticidade</em>.</p>
+
+<p><strong>Soluções:</strong></p>
+<table>
+  <tr><th>Método</th><th>Descrição</th></tr>
+  <tr><td>A. Hash + cifragem simétrica do par</td><td>Concatena M + H(M) e cifra tudo com chave simétrica.</td></tr>
+  <tr><td>B. Apenas hash cifrada</td><td>Cifra somente H(M) com chave simétrica; válido quando confidencialidade não é exigida.</td></tr>
+  <tr><td>C. Hash sobre M + segredo</td><td>H(M ∥ segredo). Adversário não tem o segredo; base do HMAC.</td></tr>
+  <tr><td>D. Método C + confidencialidade</td><td>Aplica C e também cifra o par M + tag.</td></tr>
+</table>
+
+<h2 id="mac">2.3 MAC e HMAC</h2>
+
+<p>Um <span class="term">MAC (Message Authentication Code)</span> é uma <em>função de hash chaveada</em>. Recebe (chave secreta K + mensagem M) e produz uma tag de autenticação. Apenas quem conhece K pode produzir ou verificar o MAC.</p>
+
+<p>O <span class="term">HMAC</span> (Hash-Based MAC) constrói o MAC a partir de uma função hash criptográfica e uma chave, seguindo o método C acima:</p>
+<pre>  HMAC(K, M) = H( (K ⊕ opad) ∥ H( (K ⊕ ipad) ∥ M ) )</pre>
+
+<p>Usos: autenticação de mensagens entre partes com chave compartilhada, verificação de integridade em protocolos (TLS, IPsec).</p>
+
+<p><strong>Limitação do MAC:</strong> é simétrico — ambas as partes têm a mesma chave e podem gerar MACs válidos. Portanto, não oferece <em>não repúdio</em>: Bob não pode provar a terceiros que foi Alice quem gerou o MAC.</p>
+
+<h2 id="assinatura">2.4 Assinaturas Digitais</h2>
+
+<p>A <span class="term">assinatura digital</span> usa criptografia assimétrica: o emissor assina com sua <strong>chave privada</strong> e qualquer pessoa pode verificar com a <strong>chave pública</strong> correspondente. Na prática, assina-se o hash da mensagem, não a mensagem inteira.</p>
+
+<table>
+  <tr><th>Mecanismo</th><th>Usa chave?</th><th>Integridade</th><th>Autenticidade</th><th>Não repúdio</th></tr>
+  <tr><td>Hash simples</td><td>Não</td><td>Sim</td><td>Não</td><td>Não</td></tr>
+  <tr><td>MAC / HMAC</td><td>Sim (secreta)</td><td>Sim</td><td>Sim</td><td>Limitado</td></tr>
+  <tr><td>Assinatura digital</td><td>Sim (par assimétrico)</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
+</table>
+
+<div class="diagram">Hash simples:
+  Mensagem ──▶ H(M) ──▶ Digest
+
+MAC/HMAC:
+  Mensagem + Chave secreta ──▶ H(K ∥ M) ──▶ Tag
+
+Assinatura digital:
+  Mensagem ──▶ H(M) ──▶ E_privado(H(M)) ──▶ Assinatura
+  Verificação: D_publico(Assinatura) == H(M_recebido) ?</div>
+
+<h3>Assinatura com confidencialidade</h3>
+<p>Para confidencialidade + autenticação: Alice assina com sua chave privada, depois cifra tudo com a chave pública de Bob. Bob decifra com sua chave privada e verifica a assinatura com a chave pública de Alice.</p>
+
+<h3>Outros usos de hash</h3>
+<ul>
+  <li><strong>Senhas de mão única</strong>: sistemas armazenam H(senha), nunca a senha em texto claro. Para segurança real, usa-se também <em>salt</em> (valor aleatório por usuário) para impedir tabelas pré-computadas.</li>
+  <li><strong>Detecção de intrusão e malware</strong>: hashes de executáveis do sistema são monitorados; alteração indica comprometimento.</li>
+</ul>
+
+<h2 id="hash-propriedades">2.5 Resistências e Paradoxo do Aniversário</h2>
+
+<table>
+  <tr><th>Propriedade</th><th>Pergunta que o atacante tenta responder</th><th>Custo esperado</th></tr>
+  <tr><td><strong>Pré-imagem</strong></td><td>Dado h, encontrar x tal que H(x) = h</td><td>O(2ⁿ)</td></tr>
+  <tr><td><strong>Segunda pré-imagem</strong></td><td>Dado x, encontrar y ≠ x com H(y) = H(x)</td><td>O(2ⁿ)</td></tr>
+  <tr><td><strong>Colisão</strong></td><td>Encontrar qualquer par x ≠ y com H(x) = H(y)</td><td>O(2^(n/2))</td></tr>
+</table>
+
+<p>O <span class="term">paradoxo do aniversário</span> explica por que colisões são mais baratas: em uma sala com 23 pessoas, há >50% de chance de duas fazerem aniversário no mesmo dia (de 365 possibilidades). Para um hash de n bits, a chance de colisão é significativa com apenas ~2^(n/2) tentativas — <strong>um hash de 128 bits oferece apenas ~64 bits de segurança contra colisões</strong>.</p>
+
+<details>
+  <summary>Definições: pré-imagem vs. colisão</summary>
+  <p><strong>Pré-imagem</strong>: entrada da função hash; x tal que h = H(x). Resistência à pré-imagem = impossível inverter h para encontrar x.</p>
+  <p><strong>Colisão</strong>: ocorre se existir x ≠ y tal que H(x) = H(y). Colisões matematicamente existem (domínio infinito → codomínio finito), mas devem ser computacionalmente inviáveis de encontrar.</p>
+</details>
+
+<h2 id="sha">2.6 SHA e SHA-512</h2>
+
+<p>A família <span class="term">SHA (Secure Hash Algorithm)</span> é o padrão mais usado de funções hash criptográficas. O SHA-512 produz um digest de 512 bits e processa a mensagem em blocos, mantendo um estado interno atualizado por várias rodadas. SHA-256 (256 bits) é amplamente usado em TLS, certificados e blockchain.</p>
+
+<p class="note">Para prova conceitual: o essencial é saber que SHA garante resistência à pré-imagem, segunda pré-imagem e colisão, e que a família SHA é o padrão atual (SHA-1 está depreciado; SHA-2 e SHA-3 são seguros).</p>
+
+<!-- ============================================================ -->
+<h1 id="assimetrica">3. Criptografia Assimétrica, RSA e Diffie-Hellman</h1>
+
+<h2 id="chave-publica">3.1 Ideia de Chave Pública</h2>
+
+<p>A <span class="term">criptografia de chave pública</span> (assimétrica) introduz um par de chaves: uma <strong>pública</strong> (distribível) e uma <strong>privada</strong> (secreta). Resolve dois problemas da criptografia simétrica:</p>
+<ul>
+  <li><strong>Distribuição de chaves</strong>: não é necessário um canal seguro prévio para compartilhar chave.</li>
+  <li><strong>Assinaturas digitais</strong>: permite não repúdio, impossível com chave simétrica.</li>
+</ul>
+
+<table>
+  <tr><th>Objetivo</th><th>Quem cifra / assina</th><th>Quem decifra / verifica</th></tr>
+  <tr><td><strong>Confidencialidade</strong></td><td>Alice usa <em>chave pública de Bob</em></td><td>Bob usa sua <em>chave privada</em></td></tr>
+  <tr><td><strong>Autenticação/assinatura</strong></td><td>Alice usa sua <em>chave privada</em></td><td>Qualquer um usa <em>chave pública de Alice</em></td></tr>
+</table>
+
+<p><strong>Mitos:</strong> a criptografia assimétrica não é intrinsecamente mais segura que a simétrica (depende do tamanho da chave e custo computacional) e não a substitui — as duas são complementares.</p>
+
+<details>
+  <summary>Funções de mão única com alçapão</summary>
+  <p>A base da criptografia assimétrica é a <span class="term">função de mão única com alçapão (trapdoor one-way function)</span>: fácil de calcular em uma direção, inviável de inverter sem a informação secreta (o alçapão). No RSA, o alçapão é a fatoração de n = p·q em seus primos; na posse dos primos, é simples calcular a chave privada.</p>
+</details>
+
+<h3>PKI — Infraestrutura de Chave Pública</h3>
+<p>A <span class="term">PKI (Public Key Infrastructure)</span> é o conjunto de políticas, processos e plataformas para administrar certificados e pares de chaves: emissão, manutenção e revogação de certificados. Um <strong>certificado de chave pública</strong> é um documento emitido e assinado digitalmente com a chave privada de uma CA (Autoridade Certificadora), vinculando um nome a uma chave pública.</p>
+
+<h2 id="rsa">3.2 RSA</h2>
+
+<p>O <span class="term">RSA</span> (Rivest, Shamir, Adleman) é o criptossistema de chave pública mais importante. Pode cifrar, decifrar, assinar e verificar assinaturas.</p>
+
+<h3>Geração de chaves</h3>
+<ol>
+  <li>Escolhe-se dois primos grandes p e q.</li>
+  <li>Calcula-se n = p·q e φ(n) = (p−1)·(q−1).</li>
+  <li>Escolhe-se e tal que mdc(e, φ(n)) = 1 → <strong>chave pública PU = {e, n}</strong>.</li>
+  <li>Calcula-se d tal que e·d ≡ 1 (mod φ(n)) → <strong>chave privada PR = {d, n}</strong>.</li>
+</ol>
+
+<h3>Operações</h3>
+<pre>  Cifragem:    C = Mᵉ mod n
+  Decifragem:  M = Cᵈ mod n
+
+  Assinatura:  S = H(M)ᵈ mod n
+  Verificação: H(M) == Sᵉ mod n ?</pre>
+
+<p>A entrada n normalmente usa 2048 bits (blocos de ~616 dígitos) em implementações seguras. Exemplos didáticos usam n pequeno — <strong>não representam segurança real</strong>.</p>
+
+<h3>Segurança do RSA</h3>
+<p>A segurança depende da dificuldade de <strong>fatorar n</strong> em p e q. Se um atacante fatorar n, recalcula φ(n) e obtém d. Como algoritmos e poder computacional evoluem, tamanhos de chave devem ser escolhidos com margem (≥ 2048 bits atualmente; 4096 bits para segurança a longo prazo).</p>
+
+<h2 id="dh">3.3 Diffie-Hellman</h2>
+
+<p>O <span class="term">Diffie-Hellman</span> não cifra mensagens — é um <strong>protocolo de acordo de chaves</strong>: permite que dois lados estabeleçam uma chave secreta comum por meio de um canal público.</p>
+
+<h3>Protocolo (parâmetros públicos: primo q e gerador α)</h3>
+<div class="diagram">  Alice                                              Bob
+  ─────────────────────────────────────────────────────────
+  Escolhe segredo X_A                      Escolhe segredo X_B
+  Calcula Y_A = α^X_A mod q               Calcula Y_B = α^X_B mod q
+       │                                        │
+       └──────── troca pública de Y_A, Y_B ─────┘
+       │                                        │
+  K = Y_B^X_A mod q                  K = Y_A^X_B mod q
+  (mesma chave K = α^(X_A·X_B) mod q)</div>
+
+<h3>Segurança: Logaritmo Discreto</h3>
+<p>A segurança do DH depende da dificuldade do <span class="term">logaritmo discreto</span>: dado α, q e Y = α^x mod q, é computacionalmente inviável recuperar x quando os parâmetros são grandes. Um atacante pode ver Y_A e Y_B, mas não consegue obter X_A, X_B nem a chave K.</p>
+
+<h2 id="mitm">3.4 Ataque Man-in-the-Middle no Diffie-Hellman</h2>
+
+<p>O DH básico <strong>não autentica os participantes</strong>. Um atacante no meio pode:</p>
+<ol>
+  <li>Interceptar Y_A e Y_B.</li>
+  <li>Estabelecer uma chave K₁ com Alice (fingindo ser Bob).</li>
+  <li>Estabelecer uma chave K₂ com Bob (fingindo ser Alice).</li>
+  <li>Descriptografar, ler e re-criptografar tudo que passa.</li>
+</ol>
+
+<div class="diagram">  Alice ◀── DH (K_AM) ──▶ Atacante ◀── DH (K_MB) ──▶ Bob
+
+  Alice pensa estar falando com Bob.
+  Bob pensa estar falando com Alice.</div>
+
+<p><strong>Solução:</strong> autenticar os valores DH trocados com assinaturas digitais e certificados. Em protocolos reais (TLS, IKE), o acordo de chaves combina DH com autenticação.</p>
+
+<p class="note"><strong>Ponto-chave:</strong> RSA pode cifrar e assinar; Diffie-Hellman estabelece chave compartilhada mas precisa de autenticação adicional.</p>
+
+<!-- ============================================================ -->
+<h1 id="ipsec">4. IPsec</h1>
+
+<p>O <span class="term">IPsec</span> é um conjunto de protocolos de segurança para a <strong>camada de rede</strong> (camada 3). Protege datagramas IP e pode operar entre hosts, roteadores ou entre host e roteador. Principal aplicação: criação de VPNs sobre a Internet pública.</p>
+
+<div class="diagram">Pilha com TLS:                    Pilha com IPsec:
+  Aplicação (HTTP, DNS, etc.)       Aplicação
+  TLS                               TCP/UDP
+  TCP                               IPsec + IP
+  IP                                Enlace
+  Enlace
+
+TLS protege conexões de aplicação.
+IPsec protege datagramas IP — transparente para as aplicações.</div>
+
+<h3>IPsec e VPNs</h3>
+<p>Uma <span class="term">VPN (Virtual Private Network)</span> permite que redes privadas comuniquem-se com segurança por rede pública. Em uma VPN <em>site-to-site</em>, roteadores de borda encapsulam e protegem pacotes. Em uma VPN de <em>acesso remoto</em>, dispositivos individuais estabelecem túneis até a rede da organização.</p>
+
+<h2 id="ah-esp">4.1 AH e ESP</h2>
+
+<table>
+  <tr><th>Protocolo</th><th>Sigla</th><th>Confidencialidade</th><th>Autenticação</th><th>Integridade</th><th>Uso típico</th></tr>
+  <tr><td><strong>AH</strong></td><td>Authentication Header</td><td>Não</td><td>Sim</td><td>Sim</td><td>Quando confidencialidade não é necessária</td></tr>
+  <tr><td><strong>ESP</strong></td><td>Encapsulating Security Payload</td><td>Sim</td><td>Opcional</td><td>Opcional</td><td>VPNs — o mais usado na prática</td></tr>
+</table>
+
+<p>O ESP em modo típico oferece <strong>confidencialidade + autenticação + integridade</strong> e é o protocolo preferido em instalações modernas.</p>
+
+<h2 id="sa">4.2 Associação de Segurança (SA)</h2>
+
+<p>Uma <span class="term">SA (Security Association)</span> é uma relação lógica <strong>unidirecional</strong> que define como proteger o tráfego IPsec em uma direção. Contém:</p>
+<ul>
+  <li><span class="term">SPI (Security Parameter Index)</span> — identificador único.</li>
+  <li>Algoritmos e chaves a usar.</li>
+  <li>Tempo de vida e contadores anti-replay.</li>
+</ul>
+
+<p>Para comunicação segura <strong>bidirecional</strong> entre dois hosts, são necessárias <strong>duas SAs</strong> (uma por sentido). Em uma VPN com muitos clientes, o número de SAs cresce rapidamente.</p>
+
+<h2 id="sad-spd">4.3 SAD e SPD</h2>
+
+<table>
+  <tr><th>Estrutura</th><th>Sigla</th><th>Pergunta que responde</th><th>Conteúdo</th></tr>
+  <tr><td><strong>SAD</strong></td><td>Security Association Database</td><td><em>Como</em> aplicar IPsec?</td><td>Parâmetros das SAs ativas: chaves, algoritmos, SPI, contadores</td></tr>
+  <tr><td><strong>SPD</strong></td><td>Security Policy Database</td><td><em>O que fazer</em> com este datagrama?</td><td>Políticas: proteger com IPsec, descartar ou deixar passar</td></tr>
+</table>
+
+<div class="diagram">  Datagrama chega
+        │
+        ▼
+  Consulta SPD (política)
+        │
+   ┌────┴────────────────┐
+   │          │           │
+Descartar  Passa     Aplicar IPsec
+          normal         │
+                    Consulta SAD
+                         │
+               Chaves, algoritmos, SPI
+                         │
+                  Datagrama IPsec</div>
+
+<h2 id="modos-ipsec">4.4 Modo Transporte e Modo Túnel</h2>
+
+<table>
+  <tr><th>Modo</th><th>O que é protegido</th><th>Uso típico</th></tr>
+  <tr><td><strong>Transporte</strong></td><td>Carga útil do pacote; cabeçalho IP original é mantido</td><td>Comunicação host-to-host</td></tr>
+  <tr><td><strong>Túnel</strong></td><td>Pacote IP original inteiro é encapsulado em novo pacote IP</td><td>VPNs site-to-site; roteadores de borda</td></tr>
+</table>
+
+<div class="diagram">Modo transporte:
+  ┌──────────┬─────┬────────────────┐
+  │ IP orig. │ ESP │ dados protegidos│
+  └──────────┴─────┴────────────────┘
+
+Modo túnel:
+  ┌──────────┬─────┬────────────────────────────────┐
+  │ novo IP  │ ESP │  IP original + dados protegidos  │
+  └──────────┴─────┴────────────────────────────────┘</div>
+
+<p>No modo túnel, os roteadores de borda conhecem o IPsec, mas os hosts internos não precisam. O datagrama original fica totalmente escondido no interior do novo pacote.</p>
+
+<h2 id="ike">4.5 IKE — Internet Key Exchange</h2>
+
+<p>O <span class="term">IKE</span> é o protocolo de gerenciamento de chaves do IPsec. Sem ele, seria necessário configurar manualmente chaves e SAs, o que não escala. O IKE automatiza:</p>
+<ul>
+  <li>Autenticação mútua das partes.</li>
+  <li>Negociação de algoritmos e parâmetros.</li>
+  <li>Estabelecimento de chaves (usando Diffie-Hellman).</li>
+  <li>Criação e renovação de SAs.</li>
+</ul>
+
+<div class="diagram">  IKE Fase 1 ──▶ Cria canal seguro (IKE SA)
+       │
+       ▼
+  IKE Fase 2 ──▶ Negocia e cria SAs IPsec (AH/ESP)</div>
+
+<!-- ============================================================ -->
+<h1 id="tls">5. TLS — Transport Layer Security</h1>
+
+<p>O <span class="term">TLS</span> protege comunicações de aplicações sobre TCP, adicionando <strong>confidencialidade, integridade e autenticação de ponto final</strong>. É o protocolo por trás do HTTPS, entre outros.</p>
+
+<p class="note">TLS é o sucessor do SSL. Sistemas modernos usam TLS; "certificado SSL" é um termo histórico que persiste no vocabulário cotidiano.</p>
+
+<h2 id="tls-arch">5.1 Arquitetura do TLS</h2>
+
+<div class="diagram">  Dados da aplicação (HTTP, APIs, e-mail)
+  ─────────────────────────────────────────
+  Handshake │ Change Cipher Spec │ Alert
+  ─────────────────────────────────────────
+         TLS Record Protocol
+  ─────────────────────────────────────────
+               TCP
+               IP</div>
+
+<table>
+  <tr><th>Componente</th><th>Função</th></tr>
+  <tr><td><strong>Record Protocol</strong></td><td>Fragmenta, protege (cifra + autentica) e transmite dados; base de tudo</td></tr>
+  <tr><td><strong>Handshake</strong></td><td>Negocia versão, algoritmos, autentica servidor (e opcionalmente cliente), estabelece chaves</td></tr>
+  <tr><td><strong>Change Cipher Spec</strong></td><td>Sinaliza ativação dos algoritmos e chaves recém-negociados</td></tr>
+  <tr><td><strong>Alert</strong></td><td>Comunica erros, avisos e encerramento seguro</td></tr>
+</table>
+
+<h2 id="tls-sessao">5.2 Sessão TLS vs. Conexão TLS</h2>
+
+<table>
+  <tr><th>Conceito</th><th>Definição</th><th>Analogia</th></tr>
+  <tr><td><strong>Sessão TLS</strong></td><td>Associação mais ampla entre cliente e servidor, criada pelo Handshake; contém parâmetros criptográficos reutilizáveis</td><td>Contrato com parâmetros negociados</td></tr>
+  <tr><td><strong>Conexão TLS</strong></td><td>Canal transitório peer-to-peer efetivamente usado para transmitir dados protegidos</td><td>Uma ligação telefônica específica</td></tr>
+</table>
+
+<p>Várias conexões TLS podem reutilizar uma sessão TLS, evitando o custo do Handshake completo (que envolve operações assimétricas caras) em cada reconexão.</p>
+
+<h2 id="tls-record">5.3 TLS Record Protocol</h2>
+
+<p>O Record Protocol processa dados das camadas superiores:</p>
+<ol>
+  <li><strong>Fragmenta</strong> os dados em blocos.</li>
+  <li>(Opcional) <strong>Comprime</strong>.</li>
+  <li>Calcula <strong>proteção de integridade</strong> (MAC ou AEAD).</li>
+  <li><strong>Cifra</strong> o resultado.</li>
+  <li><strong>Transmite</strong> com cabeçalho de tipo e versão.</li>
+</ol>
+<p>No receptor, o processo é invertido. A proteção depende das chaves e algoritmos acordados no Handshake. Após o Handshake, usa-se <strong>criptografia simétrica</strong> (AES-GCM, por exemplo) — muito mais eficiente que assimétrica.</p>
+
+<h2 id="handshake">5.4 Handshake TLS</h2>
+
+<div class="diagram">  Cliente                                     Servidor
+  ─────────────────────────────────────────────────────
+  ClientHello (versões, cipher suites, random) ──────▶
+                        ◀───── ServerHello (escolha)
+                        ◀───── Certificate (cert. X.509)
+                        ◀───── ServerHelloDone
+  (verifica certificado)
+  ClientKeyExchange (pré-master secret cifrado / DH) ──▶
+  Change Cipher Spec ──────────────────────────────────▶
+  Finished (HMAC de todo o handshake) ─────────────────▶
+                        ◀───── Change Cipher Spec
+                        ◀───── Finished
+  ─────────────────────────────────────────────────────
+       dados da aplicação protegidos por Record Protocol</div>
+
+<p>O Handshake negocia: versão do protocolo, conjunto criptográfico (<em>cipher suite</em>), autentica o servidor via certificado, executa troca de chave (RSA ou DH efêmero) e deriva chaves simétricas de sessão.</p>
+
+<h2 id="heartbleed">5.5 Heartbeat e Heartbleed</h2>
+
+<h3>Heartbeat</h3>
+<p>A extensão Heartbeat permite verificar se a outra parte ainda está ativa sem renegociar a conexão (mecanismo <em>keep-alive</em>). Uma parte envia uma mensagem com um payload e o tamanho declarado; a outra deve responder ecoando o mesmo payload.</p>
+
+<h3>Heartbleed (CVE-2014-0160)</h3>
+<p>Vulnerabilidade na implementação da extensão Heartbeat no OpenSSL. O problema: o servidor <strong>não validava se o tamanho declarado da mensagem correspondia ao payload real</strong>. Um atacante enviava um payload de 4 bytes declarando tamanho de 64 KB — o servidor lia 64 KB da sua própria memória e retornava.</p>
+
+<div class="diagram">  Normal:
+    Cliente: tamanho=4, dados="ABCD" ──▶
+                              ◀── "ABCD"
+
+  Heartbleed:
+    Cliente: tamanho=65535, dados="ABCD" ──▶
+                              ◀── "ABCD" + 65531 bytes de memória do servidor</div>
+
+<p>Impacto: a memória retornada podia conter <strong>chaves privadas, cookies de sessão, senhas, dados de outros usuários</strong>. O ataque era silencioso (sem rastros claros em logs) e simples de executar.</p>
+
+<p class="note"><strong>Lição:</strong> usar protocolos criptográficos corretos não é suficiente. A <em>implementação</em> também precisa ser correta, validada e mantida atualizada.</p>
+
+<h2 id="tls-ipsec">5.6 TLS versus IPsec</h2>
+
+<table>
+  <tr><th>Critério</th><th>IPsec</th><th>TLS</th></tr>
+  <tr><td><strong>Camada</strong></td><td>Rede (IP)</td><td>Transporte/Aplicação (sobre TCP)</td></tr>
+  <tr><td><strong>Granularidade</strong></td><td>Protege datagramas IP</td><td>Protege conexões de aplicações específicas</td></tr>
+  <tr><td><strong>Transparência</strong></td><td>Transparente para aplicações; configurado em roteadores/hosts</td><td>Requer suporte explícito na aplicação</td></tr>
+  <tr><td><strong>Uso típico</strong></td><td>VPNs, comunicação site-to-site, host-to-host</td><td>HTTPS, APIs, e-mail seguro</td></tr>
+  <tr><td><strong>Configuração</strong></td><td>Mais complexo (SAs, SAD, SPD, IKE)</td><td>Mais simples de implantar por serviço</td></tr>
+  <tr><td><strong>Coexistência</strong></td><td colspan="2">Os dois podem coexistir: IPsec para conectar redes, TLS para proteger serviços específicos</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h1 id="comparacoes">6. Comparações Essenciais</h1>
+
+<table>
+  <tr><th>Comparação</th><th>Resposta curta</th></tr>
+  <tr><td><strong>Hash vs MAC</strong></td><td>Hash não usa chave e não autentica origem. MAC usa chave secreta e autentica a mensagem entre partes que compartilham a chave.</td></tr>
+  <tr><td><strong>MAC vs assinatura digital</strong></td><td>MAC é simétrico, sem não repúdio forte. Assinatura digital usa chave privada e pode ser verificada publicamente por qualquer um.</td></tr>
+  <tr><td><strong>Confusão vs difusão</strong></td><td>Confusão dificulta relacionar chave com texto cifrado. Difusão espalha padrões do texto claro por toda a saída.</td></tr>
+  <tr><td><strong>DES vs AES</strong></td><td>DES usa chave efetiva de 56 bits (inseguro). AES usa bloco de 128 bits e chaves de 128/192/256 bits; padrão moderno.</td></tr>
+  <tr><td><strong>DES vs 3DES</strong></td><td>3DES aplica DES três vezes (EDE) para aumentar segurança; compatível com legado. Mais lento que AES; depreciado.</td></tr>
+  <tr><td><strong>ECB vs CBC</strong></td><td>ECB cifra blocos independentemente e vaza padrões. CBC encadeia blocos com XOR do bloco anterior e IV.</td></tr>
+  <tr><td><strong>CTR vs GCM</strong></td><td>CTR gera fluxo a partir de contadores (paralelizável, sem autenticação). GCM combina CTR com tag de autenticação.</td></tr>
+  <tr><td><strong>RSA vs Diffie-Hellman</strong></td><td>RSA pode cifrar e assinar. Diffie-Hellman estabelece chave compartilhada por canal público mas precisa de autenticação adicional.</td></tr>
+  <tr><td><strong>Chave pública vs privada</strong></td><td>Pública pode ser distribuída livremente. Privada deve ficar secreta; quem a tem pode decifrar (confidencialidade) ou assinar (autenticação).</td></tr>
+  <tr><td><strong>AH vs ESP</strong></td><td>AH fornece autenticação e integridade, sem confidencialidade. ESP pode fornecer confidencialidade, integridade e autenticação.</td></tr>
+  <tr><td><strong>SAD vs SPD</strong></td><td>SAD guarda parâmetros das SAs (como proteger). SPD define políticas sobre o que fazer com cada pacote.</td></tr>
+  <tr><td><strong>Modo transporte vs túnel</strong></td><td>Transporte protege principalmente a carga útil; cabeçalho IP original fica visível. Túnel encapsula o pacote IP original inteiro em novo pacote.</td></tr>
+  <tr><td><strong>IPsec vs TLS</strong></td><td>IPsec protege camada de rede (transparente para apps). TLS protege conexões de aplicações acima do TCP.</td></tr>
+  <tr><td><strong>Sessão TLS vs conexão TLS</strong></td><td>Sessão guarda parâmetros reutilizáveis (evita Handshake repetido). Conexão é o canal transitório de transmissão.</td></tr>
+  <tr><td><strong>Handshake vs Record Protocol</strong></td><td>Handshake negocia parâmetros e chaves. Record Protocol protege os dados transmitidos.</td></tr>
+  <tr><td><strong>Pré-imagem vs colisão</strong></td><td>Pré-imagem: dado h, achar x tal que H(x)=h (custo 2ⁿ). Colisão: achar qualquer par x≠y com mesmo hash (custo 2^n/2 pelo paradoxo do aniversário).</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h1 id="revisao">7. Perguntas de Revisão</h1>
+
+<h2>Cifras de Bloco</h2>
+<div class="qa-item">
+  <p class="question">1. Qual é a diferença entre cifra de fluxo e cifra de bloco?</p>
+  <div class="answer">
+    <p>Cifras de fluxo processam a mensagem bit a bit ou byte a byte, combinando com um fluxo de chaves pseudoaleatório via XOR. Cifras de bloco pegam blocos inteiros (64 ou 128 bits) e aplicam uma transformação estruturada sobre todo o bloco. DES, 3DES e AES são cifras de bloco; para mensagens longas, usam-se modos de operação (ECB, CBC, CTR, GCM).</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">2. O que significam confusão e difusão? Por que a cifra de bloco precisa dos dois?</p>
+  <div class="answer">
+    <p><strong>Difusão</strong>: cada bit do texto claro deve influenciar muitos bits do texto cifrado — impede deduções estatísticas (um bit muda → metade dos bits da saída muda). <strong>Confusão</strong>: a relação entre chave e texto cifrado deve ser tão complexa que conhecer parte da saída não revele informação sobre a chave — implementada com substituições não-lineares (S-boxes). Sem difusão, padrões do texto claro aparecem no cifrado. Sem confusão, a chave pode ser inferida.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">3. Por que a rede de Feistel permite usar o mesmo circuito para encriptação e decriptação?</p>
+  <div class="answer">
+    <p>Em cada rodada Feistel: L_i = R_(i-1) e R_i = L_(i-1) ⊕ F(R_(i-1), K_i). Para decriptar, aplica-se as mesmas operações mas com as subchaves em ordem inversa. A função F pode ser qualquer função — não precisa ser invertível, porque ela nunca é aplicada "ao contrário"; usa-se XOR para desfazer seu efeito. Isso simplifica hardware e software.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">4. Por que o DES é inseguro e por que o modo ECB não deve ser usado?</p>
+  <div class="answer">
+    <p>O DES tem chave efetiva de 56 bits (2⁵⁶ possibilidades). Com hardware moderno e computação paralela, um ataque de força bruta é viável. O ECB é inseguro porque cifra cada bloco independentemente: se dois blocos de texto claro forem iguais, seus cifrados também são iguais, revelando padrões estruturais da mensagem (o exemplo clássico é uma imagem bitmap cujas regiões uniformes continuam visíveis após cifração com ECB).</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">5. O que o GCM adiciona em relação ao CTR?</p>
+  <div class="answer">
+    <p>O CTR transforma a cifra de bloco em cifra de fluxo cifrando contadores e combinando com a mensagem por XOR. Oferece apenas confidencialidade. O GCM (Galois/Counter Mode) combina o CTR com uma função de autenticação (GHASH), produzindo uma tag de autenticação sobre o texto cifrado. Com GCM, qualquer alteração no texto cifrado é detectada — oferece <strong>AEAD</strong> (Authenticated Encryption with Associated Data): confidencialidade + integridade em uma única operação.</p>
+  </div>
+</div>
+
+<h2>Hash, MAC e Assinaturas</h2>
+
+<div class="qa-item">
+  <p class="question">6. Hash simples garante autenticidade? Por quê?</p>
+  <div class="answer">
+    <p>Não. Hash simples garante apenas integridade acidental (detecta corrupção). Qualquer pessoa pode calcular hash — um adversário que intercepta a mensagem pode alterá-la, recalcular o hash e reenviar o par modificado. Para autenticidade é necessário um segredo: MAC (chave simétrica compartilhada) ou assinatura digital (chave privada).</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">7. Qual a diferença entre MAC e assinatura digital?</p>
+  <div class="answer">
+    <p>O MAC usa chave <em>secreta simétrica</em> — ambas as partes têm a mesma chave, então qualquer uma pode gerar MACs válidos. Isso impede não repúdio: Bob não pode provar a terceiros que o MAC veio de Alice, porque ele próprio podia tê-lo gerado. A assinatura digital usa <em>chave privada</em> para assinar e <em>chave pública</em> para verificar. Como apenas o dono conhece a chave privada, a assinatura oferece não repúdio forte: qualquer terceiro pode verificar a assinatura com a chave pública.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">8. Por que o paradoxo do aniversário é relevante para segurança de funções hash?</p>
+  <div class="answer">
+    <p>Ataques de colisão são muito mais baratos que ataques de pré-imagem. Para uma hash de n bits, encontrar uma pré-imagem custa O(2ⁿ), mas encontrar uma colisão genérica custa apenas O(2^(n/2)) pelo paradoxo do aniversário. Portanto, um hash de 128 bits oferece apenas 64 bits de segurança contra colisões — insuficiente para usos modernos. Isso motivou o uso de SHA-256 (128 bits de segurança contra colisões) e SHA-512 (256 bits).</p>
+  </div>
+</div>
+
+<h2>Criptografia Assimétrica</h2>
+
+<div class="qa-item">
+  <p class="question">9. Como a criptografia de chave pública resolve o problema de distribuição de chaves?</p>
+  <div class="answer">
+    <p>Na criptografia simétrica, emissor e receptor precisam compartilhar uma chave secreta previamente por um canal seguro — o que é difícil em escala. Com chave pública, cada usuário publica sua chave pública livremente. Qualquer um pode cifrar com a chave pública do destinatário; só o destinatário (com sua chave privada) consegue decifrar. Não é necessário canal seguro prévio para trocar a chave de cifragem.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">10. Por que o Diffie-Hellman básico é vulnerável a man-in-the-middle?</p>
+  <div class="answer">
+    <p>O DH permite que duas partes derivem uma chave comum trocando valores públicos, mas <em>não autentica quem enviou esses valores</em>. Um atacante pode interceptar Y_A e Y_B, substituí-los pelos seus próprios valores e estabelecer duas chaves separadas: uma com Alice e uma com Bob. Cada parte acredita estar falando com a outra, mas na verdade o atacante decifra, lê e re-cifra toda a comunicação. Solução: autenticar os valores DH com assinaturas digitais e certificados (como fazem TLS e IKE).</p>
+  </div>
+</div>
+
+<h2>IPsec e TLS</h2>
+
+<div class="qa-item">
+  <p class="question">11. O que é uma SA e por que ela é unidirecional?</p>
+  <div class="answer">
+    <p>Uma SA (Security Association) é uma relação lógica que define como proteger o tráfego IPsec em <em>uma única direção</em>: define algoritmos, chaves, SPI e parâmetros anti-replay para aquele sentido de comunicação. É unidirecional porque os parâmetros (algoritmos, chaves, contadores) de A→B podem ser diferentes dos de B→A. Para comunicação bidirecional segura entre dois hosts, são necessárias <strong>duas SAs</strong> — uma para cada sentido.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">12. Qual é a diferença entre SAD e SPD?</p>
+  <div class="answer">
+    <p>O <strong>SPD</strong> (Security Policy Database) armazena <em>políticas</em>: dado um datagrama, o que fazer? As opções são: proteger com IPsec, descartar ou deixar passar. O <strong>SAD</strong> (Security Association Database) armazena os <em>parâmetros das SAs ativas</em>: chaves, algoritmos, SPI, contadores. O fluxo de decisão é: consulta SPD para decidir o que fazer → se for necessário IPsec, consulta SAD para saber como aplicá-lo.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">13. Por que o Heartbleed foi tão grave?</p>
+  <div class="answer">
+    <p>O Heartbleed explorava a extensão Heartbeat do OpenSSL: o código não validava se o tamanho declarado do payload correspondia ao payload real. Um atacante podia enviar 4 bytes mas declarar 64 KB, fazendo o servidor retornar 64 KB de sua própria memória. Essa memória podia conter chaves privadas TLS, cookies de sessão, senhas e dados sensíveis de outros usuários. O ataque era silencioso (sem rastros claros), simples de executar e afetava grande parte da infraestrutura HTTPS global. A lição: a implementação de protocolos criptográficos precisa ser tão rigorosa quanto o protocolo em si.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">14. Qual a diferença entre sessão TLS e conexão TLS?</p>
+  <div class="answer">
+    <p>Uma <strong>sessão TLS</strong> é uma associação mais ampla entre cliente e servidor, criada pelo Handshake, que contém parâmetros criptográficos (algoritmos, segredos derivados) que podem ser <em>reutilizados</em> por múltiplas conexões futuras — evitando o custo de um novo Handshake completo (operações assimétricas). Uma <strong>conexão TLS</strong> é o canal transitório peer-to-peer efetivamente usado para transmitir dados protegidos. Várias conexões podem compartilhar uma única sessão.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<hr>
+<p class="note center">SegInfo — Resumo expandido com base nos slides e apostila da disciplina (2026/1).</p>
+
+<script>
+  function toggleToc() {
+    document.getElementById('toc-panel').classList.toggle('open');
+  }
+  document.addEventListener('click', function(e) {
+    var float = document.getElementById('toc-float');
+    if (float && !float.contains(e.target)) {
+      document.getElementById('toc-panel').classList.remove('open');
+    }
+  });
+  document.querySelectorAll('#toc-panel a').forEach(function(link) {
+    link.addEventListener('click', function() {
+      document.getElementById('toc-panel').classList.remove('open');
+    });
+  });
+</script>
+
+</body>
+</html>

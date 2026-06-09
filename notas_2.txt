@@ -1,0 +1,134 @@
+# Funcoes de Hash
+
+- Entrada: Mensagem de tamanho variavel M
+- Saida: Valor de tamanho fixo h = H(M)
+
+- Valor h chamado de hash, digest ou resumo.
+- Tipos de hash: Normal e Criptografica (-- diferenca na reversibilidade).
+- Adiciona preenchimento (padding) quando entrada nao multipla do tam desejado;
+
+## Propriedades de Hash
+
+- Saida deve aparecer aleatoria e ser uniformemente distribuida;
+- Efeito avalanche: Pequena mudanca em M altera bastantes bits de h;
+- Objetivo: Integridade dos dados
+
+## Propriedades de Hash Criptografica
+
+- Computacionalmente inviavel de quebrar com eficiencia maior que forca bruta;
+- Mao unica: Dado h, inviavel de encontrar mensagem M tal que H(M) = h;
+- Livre de colisao: Inviavel de encontrar duas mensagens M_1 e M_2 tais que H(M_1) = H(M_2).
+
+## Casos de Uso
+
+- Autenticacao de mensagem
+- Assinaturas digitais
+- ...
+
+## Autenticacao de Mensagem
+
+1. Emissor calcula hash da mensagem
+2. Emissor transmite mensagem + hash
+3. Receptor recalcula hash sobre mensagem
+4. Receptor compara hash calculada com recebida
+5. Se for diferente -> mensagem ou hash adulterada; cc -> 'correto'
+
+*Problema*: Adversario (man-in-the-middle) pode interceptar mensagem, alterar msg e recalcular hash
+*Solucao*: Hash passada deve ser protegida. Formas:
+	A. Autenticacao com hash + cifragem simetrica;
+	B. Cifrar hash com cifragem simetrica;
+	C. Mensagem com hash e valor secreto;
+	D. Mensagem com hash + valor secreto com confidencialidade.
+
+A. Mensagem + hash sao concatenados e encriptados com encriptacao simetrica;
+B. Apenas hash encriptada com cifragem simetrica: Valido quando confidencialidade nao exigida;
+C. Hash calculada sobre mensagem + valor secreto. Man in the middle nao tem valor secreto;
+D. Metodo C porem mensagem + hash sao encriptados.
+
+- HMAC (Hash Based Message Authentication Code) segue o metodo C:
+	- Usa um MAC (Message Authentication Code) que eh *funcao de hash chaveada*;
+	- MACs usados entre as duas partes que compartilham chave secreta para autenticar msgs trocadas;
+	- MAC recebe como entrada (chave secreta + bloco de dados) e produz hash.
+
+## Assinaturas Digitais
+
+- Sistema de chave publica e privada;
+- Hash encriptada com chave privada do usuario;
+- Se conhece chave publica, consegue verificar validade da mensagem;
+- Deve conhecer chave privada do usuario para alterar mensagem;
+- Com confidencialidade: Encriptar [mensagem + hash encriptado] com chave simetrica.
+
+## Exemplo Hash Simples
+
+C_i = b_(i1) ^ b_(i2) ^ ... ^ b_(im)
+
+onde:
+	- C_i: i-esimo bit do codigo de hash (1 <= i <= n);
+	- m: numero de blocos de n bits na entrada;
+	- b_(ij): i-esimo bit no j-esimo bloco;
+
+Problemas:
+	- Blocos do texto cifrado podem ser alterados e nao muda hash;
+	- Precisamos de funcoes de hash criptograficas resistentes a colisoes.
+
+- Pre-imagem: Entrada da funcao de hash, ie, x tal que h = H(x);
+- Colisao: Ocorre se existir x <> y tal que H(x) = H(y);
+
+Ignorando secao 'Pre-imagens e Potenciais Colisoes' para frente
+
+# Criptografia Assimetrica
+
+## Criptografia de Chave Publica
+
+- Assimetrica: Duas chaves separadas (publica e privada);
+- Facilita confidencialidade, distribuicao de chave e autenticacao;
+- Computacionalmente inviavel de derivar chave privada a partir da publica.
+
+Mitos:
+	- Mais segura que criptografia simetrica: Depende do tamanho da chave e custo computacional;
+	- Nao substitui criptografia simetrica, tem outras aplicacoes:
+		- Gerenciamento de chaves;
+		- Assinaturas digitais.
+
+- Certificado de chave publica: Documento emitido e assinado digitalmente com chave privada de CA:
+	- Vincula nome de assinante a uma chave publica;
+	- Assinante identificado tem controle da chave privada.
+
+Infraestrutura de chave publica (PKI): Conj de politicas, processos e plataformas para admin de certificados e pares de chaves:
+	- Emissao, manutencao e revogacao de certificados;
+	- Envolve servidores, software e estacoes de trabalho;
+	- Suporte par autenticacao, confidencialidade e integridade.
+
+### Exemplo
+
+- Objetivo: Bob quer enviar mensagem para Alice.
+- Bob possui chaves publicas de Alice, Mike, Ted, ... . Portanto:
+	1. Bob criptografa mensagem com chave publica da Alice;
+	2. Alice descriptografa mensagem com sua chave privada;
+	3. O uso oposto das chaves valido se objetivo eh autenticacao.
+
+## Continuacao
+
+Requisitos para Criptografia de Chave publica: (ver pag. 142)
+	- Geracao de par de chaves computacionalmente facil
+	- ...
+
+Funcao de Mao Unica com Alcapao: Mapeia um dominio X em um intervalo Y onde:
+
+	Y = f(X) facil de calcular, mas X = f^(-1) inviavel de obter
+
+	- Existe info secreta que facilita inversao da funcao;
+	- Essencial para criptografia de chave publica.
+
+# Algortimo RSA
+
+## Funcionamento
+
+- Entradas: Texto claro (convertido em numeros) e n (normalmente 1024 -- blocos de 308 digitos);
+- Valores:
+	- Chave publica: PU = {e, n}
+	- Chave privada: PU = {d, n}
+- Processo:
+	1. Cada bloco do texto claro M deve satisfazer 0 <= M < n;
+	2. Encriptacao: C = M^e mod n;
+	3. Decriptacao: M = C^d mod n;

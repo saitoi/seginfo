@@ -1,0 +1,69 @@
+Cifras de Bloco
+
+Diferencas:
+	Fluxo:
+		- Encriptam dados bit a bit ou byte a byte.
+		- Limitação prática: Fluxo de chaves precisa ser compartilhado via canal seguro antes.
+		- Solução prática: Gerar fluxos de bits algoritmicamente algoritmicamente usando chave.
+	Bloco:
+		- Tratam bloco de texto claro como um todo (tam 64 ou 128 bits).
+		- Usuários compartilham chave simétrica.
+		- Mais analisadas/utilizadas em aplicações de criptografia assimétrica.
+
+Diagrama da cifra de bloco:
+	- Entrada: b bits
+	- Saída: b bits
+	- Processo: b bits (texto claro) => Encriptação (chave K) => b bits cifrado => Decriptação => b bits (texto claro)
+
+Contexto histórico:
+	- Claude Shannon desenvolveu cifra de produto (alterna funções de confusão e difusão).
+	- Cifra de Feistel (proposta por Shannon) é usada em cifras de bloco simétricas atuais.
+
+Conceitos de Shannon:
+	 - Difusão: Espalhar influência do bit do texto claro por muitos bits do cifrado.
+	 - Confusão: Tornar relação entre chave e texto cifrado complexa.
+	 - Objetivo: Impedir criptoanálise baseada em estatísticas do texto claro
+
+Difusão em Criptografia:
+	- Objetivo: Dissociar estrutura estatísticas do texto claro da estatística do texto cifrado.
+	- Princípio: Cada dígito do texto claro deve afetar muitos dígitos do texto cifrado.
+	- Exemplo matemático:
+
+	Dada mensagem M = m1, m2, m3, ...
+
+		c_n = ( sum_(i=1)^k m_(n+i) ) mod 26
+
+	Onde k letras sucessivas do texto claro influenciam cada letra do texto cifrado.
+	Efeito:
+		- Frequência de letras e dígrafos no texto cifrado se aproximam de distribuição enorme.
+
+Difusão e Confusão:
+	Difusão:
+		- Complica relacionamento estatístico entre texto claro e cifrado.
+		- Cada bit do texto claro influencie muitos bits do texto cifrado.
+		- Frusta tentativas de deduzir padrões no texto claro.
+	Confusão:
+		- Complica relacionamento entre texto cifrado e chave de encriptação.
+		- Usa funções de substituição complexas para dificultar descoberta da chave.
+		- Funções lineares simples resultariam em pouca confusão e vulnerabilidade.
+
+Cifra de Feistel:
+	Objetivo: Criar cifras de bloco seguras a partir de funções de encriptação simples.
+	Descrição:
+		- Entrada: Bloco de texto claro de 2 * w bits e chave K
+		- Alto nível:
+			- Bloco é dividido em duas metades: L_0 e R_0
+			- Blocos passam por n rodadas de processamento
+			- Cada rodada i recebe L_(i-1), R_(i-1) e subchave K_i derivada de K
+			- Subchaves K_i costumam ser diferentes entre si e da original
+			- Após n rodadas, as metades são combinadas para gerar o bloco cifrado
+
+	Estrutura básica das rodadas:
+		1. Aplicar função de substituição F na parte direita R_(i-1) com subchave K_i
+		2. Operação de XOR entre saída de F e metade esquerda L_(i-1):
+
+			R_i = L_(i-1) ^ F( R_(i-1), K_i )
+
+		3. Permutação trocando as metades:
+
+			L_i = R_(i-1)
