@@ -132,3 +132,42 @@ Funcao de Mao Unica com Alcapao: Mapeia um dominio X em um intervalo Y onde:
 	1. Cada bloco do texto claro M deve satisfazer 0 <= M < n;
 	2. Encriptacao: C = M^e mod n;
 	3. Decriptacao: M = C^d mod n;
+- Seguranca:
+    - Depende da dificuldade de fatorar n (numero primo grande);
+
+## Troca de Chaves Diffie-Hellman
+
+- Objetivo: Permitir dois usuarios trocar variaveis para criar chave secreta.
+- Seguranca: Dificuldade de calcular logaritmos discretos.
+
+### Demonstracao
+
+Dado uma raiz primitiva 'a' modulo 'p' (p primo) temos que:
+
+    a^1 mod p, a^2 mod p, ..., a^(p-1) mod p => gera todos os inteiros entre 1 e p-1 (coprimos de p)
+
+Para um inteiro b, existe um *unico* expoente 'i' tal que
+
+    b === a^i mod p, 0 <= i <= p-1
+
+Esse 'i' eh conhecido como logaritmo discreto de 'b' na base 'a' modulo 'p':
+
+    i = log_a (b) mod p
+
+# IPsec
+
+- Objetivo: Prover seguranca na camada de rede protegendo datagramas IP entre entidades (hosts/roteadores);
+- Permite criar Redes Privadas Virtuais (VPN);
+- Seguranca abrange tres areas funcionais:
+    - Autenticacao: Fonte confiavel e pacote nao alterado no transito;
+    - Confidencialidade: Nos da rede cifram msg e evita espionagem (eavesdropping);
+    - Gerenciamento de chaves: Troca segura de chaves entre as partes.
+
+- Confidencialidade na camada de rede:
+    - Entidade remetente (host/roteador) cifra carga util (payload) dos datagramas;
+    - Carga util:
+        - Segmento TCP;
+        - Segmento UDP;
+        - Mensagem ICMP;
+        - Mensagem SNMP, etc.
+
