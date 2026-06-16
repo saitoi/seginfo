@@ -1,0 +1,276 @@
+import { useState } from "react";
+const C={bg:"#07111A",surface:"#0D1E2C",card:"#112030",border:"#1A3448",text:"#DDD5C5",muted:"#5A7A90",m5:"#7F77DD",m6:"#5DCAA5",m7:"#EF9F27",m8:"#D4537E",m9:"#85B7EB",good:"#50C878",bad:"#E05C5C",warn:"#D4C870",accent:"#7AB8D4"};
+
+const gabarito=[
+  // ── LISTA 3 ──
+  {id:"L3Q3a",lista:"L3",q:"Q3 — Confusão e Difusão",color:C.m5,
+   enunciado:`Explique os conceitos de Confusão e Difusão segundo Claude Shannon. Relacione como cada um é implementado na estrutura de uma Cifra de Feistel, usando a implementação de uma rodada apresentada em aula.`,
+   resposta:"DIFUSÃO: espalha bits do texto claro pelo cifrado (permutações). Na Feistel: Li=Ri-1 e Rᵢ=Lᵢ-1⊕F — cada rodada leva bits de um lado para o outro. CONFUSÃO: torna opaca a relação chave↔cifrado (S-boxes não-lineares). Na Feistel: a função F mistura Ri-1 com Ki. F linear (R*K) elimina a confusão: chave não influencia saída → ataque algébrico quebra sem força bruta.",
+   dica:"Difusão = permutação/espalhamento. Confusão = S-box/não-linear. F linear → sem confusão → inseguro."},
+  {id:"L3Q3b",lista:"L3",q:"Q3 — Parâmetros de robustez Feistel",color:C.m5,
+   enunciado:`Apesar de simples, a Cifra de Feistel é base para uma série de cifras comerciais. Quais são os principais parâmetros que podemos modificar para torná-la mais robusta e resistente a ataques?`,
+   resposta:"5 parâmetros: (1) Tamanho do bloco: maior = mais difusão. (2) Tamanho da chave: maior = mais resistência a força bruta. (3) Número de rodadas: mais rodadas = mais criptoanálise necessária. (4) Key schedule: mais complexo = subchaves mais imprevisíveis. (5) Função F: mais não-linear = mais confusão.",
+   dica:"Macete: BlocoChaveRodasScheduleF. Rodadas ≠ força bruta — rodadas combatem criptoanálise, tamanho de chave combate força bruta."},
+  {id:"L3Q4",lista:"L3",q:"Q4 — DES e 3DES",color:C.m5,
+   enunciado:`O 3DES foi criado em resposta a problemas de segurança encontrados no DES.
+1. Discorra sobre os motivos que motivaram a substituição do DES.
+2. O 3DES teve como objetivo ser compatível com o DES. Explique como essa compatibilidade foi alcançada.
+3. Qual é o tamanho efetivo de chave do 3DES com três chaves independentes (K1, K2, K3)? E com apenas duas chaves (K1=K3)?
+4. O 3DES mantinha o mesmo tamanho de bloco do DES. Qual era o problema disso?`,
+   resposta:"DES inseguro: chave de 56 bits → 2⁵⁶ possibilidades → força bruta em horas. A estrutura Feistel é válida; o problema é só a chave. 3DES-EDE: C=E(K3,D(K2,E(K1,P))). Retrocompatibilidade: K1=K2=K3 → E(K,D(K,E(K,P)))=E(K,P)=DES. D no meio existe só para isso. Chaves efetivas: 3 chaves→168 bits, 2 chaves(K1=K3)→112 bits. Bloco 64 bits: birthday attack após 2³² blocos (4 GB) com mesma chave.",
+   dica:"'Por que EDE e não EEE?' → retrocompatibilidade. 'Por que D no meio?' → K1=K2=K3 cancela e vira DES simples."},
+  {id:"L3Q5",lista:"L3",q:"Q5 — Rodadas vs. tamanho de chave",color:C.m5,
+   enunciado:`Explique por que o aumento do tamanho da chave no AES (128, 192, 256 bits) é mais eficaz contra ataques de força bruta do que simplesmente aumentar o número de rodadas em uma cifra de Feistel como o DES.
+
+Afirmação: "Um AES com chave de 128 bits e 10 rodadas é mais seguro contra força bruta que um DES com 16 rodadas, mesmo que o DES tenha mais rodadas." — Verdadeira ou Falsa? Justifique.`,
+   resposta:"VERDADEIRA. Força bruta depende do ESPAÇO DE CHAVE, não do número de rodadas. Rodadas combatem criptoanálise diferencial/linear. AES-128 tem 2¹²⁸ chaves; DES tem 2⁵⁶. Mesmo com 32 rodadas, DES ainda tem 2⁵⁶ chaves — apenas cada tentativa demora mais. 2¹²⁸/2⁵⁶ = 2⁷² ≈ 5×10²¹× mais seguro.",
+   dica:"Rodadas = proteção contra criptoanálise. Tamanho de chave = proteção contra força bruta. São ameaças DISTINTAS."},
+  {id:"L3Q6",lista:"L3",q:"Q6 — AES-GCM",color:C.m5,
+   enunciado:`O AES-GCM combina confidencialidade e autenticação. Baseado nisso, descreva:
+1. Como é implementada a confidencialidade?
+2. Como é implementada a autenticação?
+3. Outros modos como o AES-CBC também nos fornecem confidencialidade e autenticação ou somente um desses aspectos? Discorra.`,
+   resposta:"Confidencialidade: modo CTR — cifra contadores incrementais com AES; XOR com texto claro. Autenticação: GHASH em GF(2¹²⁸) — multiplica blocos do cifrado pela chave H=E(K,0¹²⁸); gera tag de 128 bits que autentica cifrado + AAD. CBC fornece APENAS confidencialidade — sem MAC embutido, susceptível a bit-flipping. GCM fornece confidencialidade + autenticidade em uma única passagem.",
+   dica:"GCM = CTR (confidencialidade) + GHASH (autenticidade). CBC = apenas confidencialidade. Sem CBC-MAC separado, CBC não autentica."},
+  // ── LISTA 4 ──
+  {id:"L4Q1",lista:"L4",q:"Q1 — Confusão/Difusão + prova da decriptação Feistel",color:C.m5,
+   enunciado:`1. Explique, com suas palavras, os conceitos de difusão e confusão segundo Claude Shannon.
+2. Descreva a estrutura de Feistel. Demonstre por que o mesmo algoritmo pode ser usado tanto para encriptação quanto para decriptação apenas invertendo a ordem das subchaves Kᵢ. Mostre isso para uma rodada apenas.`,
+   resposta:"DIFUSÃO: elimina redundância estatística espalhando influência de cada bit do texto claro. CONFUSÃO: torna opaca a relação entre chave e texto cifrado (S-boxes). Prova decriptação (1 rodada): Entrada = R₁‖L₁ (metades trocadas). novo_L = L₁ = R₀ ✓. novo_R = R₁ ⊕ F(L₁,K₁) = R₁ ⊕ F(R₀,K₁) = [L₀⊕F(R₀,K₁)] ⊕ F(R₀,K₁) = L₀ ✓. XOR cancela: A⊕F⊕F=A. F não precisa ser invertível.",
+   dica:"Entrada da decriptação = metades TROCADAS. O F recebe L₁=R₀ (mesmo argumento da cifração) → XOR cancela."},
+  {id:"L4Q2",lista:"L4",q:"Q2 — Cálculo numérico Feistel",color:C.m5,
+   enunciado:`Cifra de Feistel com bloco de 8 bits, duas metades de 4 bits cada. F(x, Kᵢ) = 1111 (constante).
+Bloco: 10100110 | F(R₀, K₁) = 1111
+
+1. Calcule L₁ e R₁ (em binário).
+2. Concatene L₁ e R₁ — bloco de saída de 8 bits.
+3. Decriptografe o bloco e mostre que o texto original é recuperado.
+4. Por que F constante torna a cifra insegura? Qual propriedade é prejudicada?`,
+   resposta:"L₀=1010, R₀=0110. L₁=R₀=0110. R₁=L₀⊕F=1010⊕1111=0101. Saída: 01100101. Decriptação: entrada R₁‖L₁=01010110. novo_L=L₁=0110=R₀ ✓. novo_R=R₁⊕F=0101⊕1111=1010=L₀ ✓. F constante → sem CONFUSÃO: chave não influencia F, atacante observa que R₁=L₀⊕1111 sempre, sem precisar saber K.",
+   dica:"Trocar metades na entrada da decriptação. F constante elimina confusão — a chave se torna irrelevante."},
+  {id:"L4Q3",lista:"L4",q:"Q3 — Hash XOR e vulnerabilidade",color:C.m6,
+   enunciado:`Função de hash iterativa simples: H₀ = 00000000 e Hᵢ = Hᵢ₋₁ ⊕ Bᵢ para cada bloco Bᵢ de 8 bits.
+
+1. Mostre com exemplo numérico como é possível reordenar blocos sem alterar o hash.
+2. Proponha modificação simples que torne esse esquema resistente à reordenação.`,
+   resposta:"Vulnerabilidade: XOR é comutativo (A⊕B=B⊕A) → reordenar não altera o hash. Prova: B1=10110010, B2=01001101, B3=11100001 → H=B1⊕B2⊕B3=00011110. Reordenando B2,B1,B3 → H=B2⊕B1⊕B3=00011110 (igual). Correção robusta: RXOR — rotacionar Hᵢ₋₁ antes do XOR quebra comutatividade incorporando histórico da posição.",
+   dica:"XOR puro é comutativo → ordem não importa. Rotação incorpora posição → ordem importa."},
+  {id:"L4Q4",lista:"L4",q:"Q4 — Propriedades de hash e função de compactação",color:C.m6,
+   enunciado:`1. Que características são necessárias em uma função de hash segura?
+2. O que é resistência à pré-imagem?
+3. O que é resistência à segunda pré-imagem?
+4. O que é resistência à colisão forte?
+5. Quais são as implicações de não se possuir resistência à colisão forte?
+6. O que é a função de compactação de hash? O que torna uma função de compactação segura?`,
+   resposta:"7 características: entrada variável, saída fixa, eficiência, pré-imagem, 2ª pré-imagem, colisão forte, pseudoaleatoriedade. Pré-imagem: dado h, inviável achar x com H(x)=h (2ᵐ). 2ª pré-imagem: dado x, inviável achar y≠x com H(y)=H(x) (2ᵐ). Colisão forte: inviável achar qualquer par x≠y com H(x)=H(y) (2^m/2). Sem colisão: ataque de Yuval — gerar 2^(m/2) variantes legítimas e fraudulentas antes da assinatura. Função compactação f: (n+b bits)→n bits, b>n. Merkle-Damgård: f resistente → hash iterativo resistente.",
+   dica:"Hierarquia: colisão ⟹ 2ª pré-imagem ⟹ pré-imagem. Ataque de Yuval usa o paradoxo do aniversário para forjar assinaturas."},
+  {id:"L4Q5",lista:"L4",q:"Q5 — Paradoxo do Aniversário",color:C.m6,
+   enunciado:`Uma função de hash produz um resumo de m bits.
+
+1. Usando o paradoxo do aniversário, estime o esforço (ordem de grandeza) necessário para encontrar uma colisão por força bruta.
+2. Para m=128 e m=256, escreva a ordem de magnitude desse esforço e comente se cada tamanho é suficiente para segurança moderna.`,
+   resposta:"Colisão: O(2^(m/2)) pelo paradoxo do aniversário. m=128: 2^64≈1,8×10¹⁹ → INSUFICIENTE (clusters modernos: horas a dias). m=256: 2^128≈3,4×10³⁸ → SUFICIENTE (inviável com qualquer tecnologia previsível). Conversão: 2^64≈(2^10)^6×2^4≈(10^3)^6×16=1,6×10¹⁹.",
+   dica:"Pré-imagem: 2ᵐ. Colisão: 2^(m/2). m=128→apenas 64 bits de segurança efetiva. Conversão rápida: 2^10≈10^3."},
+  // ── LISTA 5 ──
+  {id:"L5Q1",lista:"L5",q:"Q1 — Simétrica vs. Assimétrica",color:C.m7,
+   enunciado:`Compare criptografia simétrica e assimétrica em termos de:
+1. Distribuição de chaves.
+2. Aplicações de cada tipo.
+3. A criptografia assimétrica também é suscetível a ataques de criptoanálise e força bruta?
+4. Por que sistemas práticos frequentemente usam ambos os tipos?`,
+   resposta:"Simétrica: 1 chave secreta, distribuição é o problema, rápida, n partes → n(n-1)/2 chaves. Assimétrica: par pública+privada, distribuição resolvida, lenta, n partes → n pares. Aplicações simétrica: cifrar dados em volume. Assimétrica: troca de chaves, assinatura, autenticação. Assimétrica TAMBÉM vulnerável — mas espaço de chave gigantesco (2048+ bits RSA). Sistema híbrido (TLS/SSH): assimétrica troca chave de sessão; simétrica cifra os dados.",
+   dica:"PÚBLICA do destinatário para confidencialidade. PRIVADA do emissor para assinatura. Híbrido = melhor dos dois mundos."},
+  {id:"L5Q2",lista:"L5",q:"Q2 — RSA numérico (p=17, q=11, e=7, M=88)",color:C.m7,
+   enunciado:`Dado p=17, q=11:
+1. Calcule n e φ(n).
+2. Escolha e=7 e calcule d tal que e·d ≡ 1 (mod φ(n)). Mostre os passos.
+3. Encripte M=88 com a chave pública (e, n) e decripte com d.`,
+   resposta:"n=17×11=187. φ(n)=16×10=160. d: 7d≡1(mod 160). Euclides estendido: 160=22×7+6; 7=1×6+1 → 1=7-1×(160-22×7)=23×7-160 → d=23. Verificação: 7×23=161=1+160 ✓. PU=(7,187), PR=(23,187). C=88^7 mod 187=11. M=11^23 mod 187=88 ✓.",
+   dica:"Verificação direta: 7×23=161=1+160. Euclides: descer (divisões) depois subir (substituições retroativas)."},
+  {id:"L5Q3",lista:"L5",q:"Q3 — Segurança do RSA",color:C.m7,
+   enunciado:`1. Como a dificuldade de fatoração se relaciona com a segurança do RSA?
+2. Qual é o efeito de utilizar um valor n pequeno no RSA?
+3. Uma vez que o valor de φ(n) seja conhecido, podemos dizer que a segurança do RSA foi comprometida? Justifique.`,
+   resposta:"Segurança: fatorar n=p×q é inviável para n grande. Fatorou n → obtém p,q → calcula φ(n) → d=e⁻¹ mod φ(n) → chave privada comprometida. n pequeno: fatoração trivial (n=187=11×17 em segundos). φ(n) conhecido: p+q=n-φ(n)+1 e p×q=n → equação quadrática x²-(n-φ(n)+1)x+n=0 → raízes p e q → d calculável → RSA completamente comprometido.",
+   dica:"φ(n) → equação quadrática → p e q. Proteger φ(n) é tão crítico quanto proteger d."},
+  {id:"L5Q4",lista:"L5",q:"Q4 — DH numérico (q=467, α=2)",color:C.m7,
+   enunciado:`Parâmetros públicos: q=467, α=2.
+1. Escolha XA e XB (expoentes privados). Justifique os valores.
+2. Calcule YA=α^XA mod q e YB=α^XB mod q.
+3. Calcule KA=YB^XA mod q e KB=YA^XB mod q. Verifique KA=KB.`,
+   resposta:"XA, XB: inteiros com 1 < X < 466 (ex: XA=400, XB=134). YA=2^400 mod 467, YB=2^134 mod 467 — calculados por exponenciação rápida. KA=YB^XA mod q, KB=YA^XB mod q. KA=KB porque: YB^XA=(α^XB)^XA=α^(XB·XA)=α^(XA·XB)=YA^XB=KB. A chave compartilhada K nunca trafegou pelo canal.",
+   dica:"Prova da igualdade: α^(XA·XB)=α^(XB·XA) pela comutatividade da multiplicação de inteiros."},
+  {id:"L5Q5",lista:"L5",q:"Q5 — Segurança do DH e MITM",color:C.m7,
+   enunciado:`1. Por que um atacante que conhece apenas q, α, YA, YB não consegue obter K na prática?
+2. Qual o problema de se escolher q pequeno?
+3. O DH é suscetível a ataque man-in-the-middle? Descreva como mitigar.`,
+   resposta:"Segurança: logaritmo discreto — dado YA=α^XA mod q, encontrar XA é inviável para q grande (2048+ bits). q pequeno → força bruta factível (XA ∈ {2..q-2}, espaço pequeno). MITM: Eve intercepta YA e YB, substitui pelos seus YE, estabelece chaves separadas com Alice e Bob — lê e reencripta. Mitigação: Alice e Bob assinam YA/YB com chaves privadas RSA; receptor verifica assinatura via certificados de CA — Eve não tem as chaves privadas.",
+   dica:"MITM: Eve estabelece 2 chaves diferentes com cada parte. Solução: assinar Y com RSA + certificados PKI."},
+  {id:"L5Q6",lista:"L5",q:"Q6 — Aplicações da Criptografia Assimétrica",color:C.m7,
+   enunciado:`1. Cite duas aplicações práticas da criptografia assimétrica.
+2. Explique o papel das chaves pública e privada em cada aplicação.
+3. Explique como certificados digitais funcionam no contexto do HTTPS.`,
+   resposta:"Aplicações: (1) Assinatura digital — emissor usa PRIVADA para assinar H(M); receptor usa PÚBLICA para verificar. Garante autenticidade + não-repúdio. (2) Confidencialidade — usa PÚBLICA do destinatário para cifrar; destinatário usa PRIVADA para decifrar. Certificado HTTPS: CA assina com sua chave privada o par (identidade do servidor, chave pública do servidor). Navegador verifica assinatura da CA com sua chave pública (pré-instalada). Se válido, a chave pública pertence ao servidor legítimo → MITM impossível sem a chave privada da CA.",
+   dica:"PÚBLICA = cifrar + verificar. PRIVADA = decifrar + assinar. Certificado = CA amarra identidade↔chave pública com sua assinatura."},
+  // ── LISTA 6 ──
+  {id:"L6Q1",lista:"L6",q:"Q1 — SA, SAD e SPD",color:C.m8,
+   enunciado:`Cenário: roteador de borda da Matriz com VPN IPSec para Filial. Funcionário envia relatório para a Filial (vai pelo túnel) e acessa a Internet pública.
+
+1. Descreva o que é uma SA, sua característica e como gerenciar comunicação bidirecional.
+2. Explique o que é a SPD.
+3. Explique o que é a SAD.
+4. Como o roteador usa SAD e SPD no cenário? O que acontece com cada pacote ao entrar na Internet pública?`,
+   resposta:"SA: conexão lógica SIMPLEX (unidirecional), identificada por SPI+IP destino+protocolo. Bidirecional=2 SAs. VPN(1 Matriz+1 Filial+n Vendedores)=2+2n SAs. SPD: POLÍTICA — PROTECT/BYPASS/DISCARD por IP src+dst+protocolo. SAD: ESTADO — chaves, algoritmos, SPI, sequence number. Relatório para Filial: SPD→PROTECT→SAD→ESP modo túnel→novo IP externo→Internet. Acesso Internet pública: SPD→BYPASS→encaminha IP original sem IPSec.",
+   dica:"SPD=O QUÊ fazer. SAD=COMO fazer. SA=SIMPLEX/unidirecional. Regra: 2 SAs por par bidirecional."},
+  {id:"L6Q2",lista:"L6",q:"Q2 — AH, ESP e Modos",color:C.m8,
+   enunciado:`1. Quais são os dois protocolos do IPSec e quais serviços (CIA) cada um fornece?
+2. Descreva o AH e como é aplicado, indicando quais campos autentica.
+3. Descreva o ESP e como é aplicado, indicando quais serviços fornece.
+4. Explique a diferença entre modo Transporte e modo Túnel.
+5. No cenário da VPN Matriz/Filial, qual modo é usado e por quê?`,
+   resposta:"AH (51): autenticação + integridade, SEM confidencialidade, autentica IP externo (campos imutáveis). ESP (50): confidencialidade + autenticação + integridade + anti-replay, NÃO autentica IP externo. Modo transporte: [IP orig | ESP | TCP | dados] — IPs visíveis, host-to-host. Modo túnel: [IP ext | ESP | IP orig cifrado | TCP | dados] — IPs internos ocultos, gateway-to-gateway. VPN usa TÚNEL: endpoints são gateways, não hosts; IPs internos ficam cifrados dentro do payload.",
+   dica:"AH autentica IP externo; ESP NÃO (TTL muda em trânsito). VPN=túnel. AH é deprecated — foco em ESP."},
+  {id:"L6Q3",lista:"L6",q:"Q3 — IKE",color:C.m8,
+   enunciado:`1. Qual é o objetivo do IKE?
+2. Quais são as 3 responsabilidades do IKE?
+3. O IKE define uma IKE SA. Qual é seu objetivo e como difere da SA do IPSec?
+4. O IKE tem duas fases. Quais são e por que existem duas?
+5. Explique a necessidade do Diffie-Hellman e como chave pública/privada são úteis.
+6. Como é possível resistir a ataques MITM nesse cenário?
+7. Relacione o custo computacional de simétrica/assimétrica com as fases do IPSec.`,
+   resposta:"IKE: automatiza criação de SAs (evita configuração manual). 3 responsabilidades: autenticar entidades, negociar parâmetros (algoritmos), gerar chaves (via DH). IKE SA: bidirecional, protege negociações. IPSec SA: unidirecional, protege dados do usuário. Fase 1: DH anônimo → autenticação com certificados RSA → IKE SA bidirecional. Fase 2: dentro do canal seguro → 2 IPSec SAs unidirecionais. DH: troca segura sem transmitir segredo. RSA+certificados: autentica os valores Y contra MITM. MITM: assinar YA/YB com chave privada RSA. Custo: Fase 1 usa assimétrica (lenta, uma vez); Fase 2 usa simétrica (rápida, tráfego contínuo).",
+   dica:"IKE FA = DH+RSA. Fase 1→IKE SA bidirecional. Fase 2→2 IPSec SAs unidirecionais. Fase 1: assimétrica. Fase 2: simétrica."},
+  {id:"L6Q4",lista:"L6",q:"Q4 — Best-Effort e transformação do pacote",color:C.m8,
+   enunciado:`1. Explique brevemente o princípio "Best-Effort" do protocolo IP.
+2. Ao usar ESP no Modo Túnel, o pacote sofre encapsulamento e criptografia:
+   (a) Explique a necessidade do campo Padding antes da criptografia.
+   (b) Como o campo de próximo protocolo do cabeçalho IP externo indica o IPSec?`,
+   resposta:"IP Best-Effort: sem garantia de entrega, ordem ou unicidade — cada datagrama roteado independentemente. Sequence Number no ESP existe porque IP pode duplicar pacotes. (a) Padding: cifras de bloco exigem múltiplos fixos — AES=16 bytes. Payload 100 bytes → 12 bytes de padding → 112=7×16 blocos. Pad Length no trailer indica quantos bytes remover no receptor. (b) Next Protocol no IP externo = 50 (ESP) ou 51 (AH). Receptor lê esse campo → sabe que é IPSec → extrai SPI → localiza SA no SAD.",
+   dica:"Padding: AES precisa de múltiplos de 16. Next Protocol 50=ESP, 51=AH. IP Best-Effort = sem garantias."},
+  {id:"L6Q5",lista:"L6",q:"Q5 — O Papel do HMAC no IPSec",color:C.m8,
+   enunciado:`O IPSec, através dos seus protocolos (AH e ESP), garante a integridade e autenticidade dos pacotes de dados. O mecanismo mais comum é o HMAC.
+
+1. Defina o que é o HMAC e qual é o seu principal objetivo em um protocolo de segurança como o IPSec.
+2. Descreva o que é Integridade de Dados e Autenticidade de Dados e explique qual dos dois serviços o HMAC garante.
+3. No contexto do protocolo ESP, onde o HMAC é tipicamente inserido e qual parte do pacote ele cobre?`,
+   resposta:"HMAC=hash+chave secreta K → HMAC(K,M)=H[(K⊕opad)‖H[(K⊕ipad)‖M]]. Objetivo no IPSec: autenticar pacotes (quem enviou) e detectar modificações. INTEGRIDADE: qualquer bit modificado → HMAC diverge → alteração detectada. AUTENTICIDADE: sem K é inviável gerar HMAC válido → confirma origem. HMAC garante OS DOIS. No ESP: ao final do pacote (campo ESP auth). Cobre: ESP header (SPI+SeqN) + payload cifrado + ESP trailer. NÃO cobre IP externo (campos como TTL mudam em trânsito).",
+   dica:"HMAC=integridade+autenticidade simultaneamente. Posição: final do ESP. IP externo não coberto (muda em trânsito)."},
+  // ── LISTA 7 ──
+  {id:"L7Q1",lista:"L7",q:"Q1 — Sessão e Conexão TLS",color:C.m9,
+   enunciado:`1. O TLS define dois conceitos centrais: Sessão e Conexão. Explique a diferença entre os dois.
+2. Por que é vantajoso que múltiplas conexões possam compartilhar uma mesma sessão?
+3. Qual protocolo TLS é responsável por criar uma sessão?`,
+   resposta:"Sessão TLS: associação entre cliente e servidor com parâmetros criptográficos reutilizáveis (algoritmos, Master Secret). Criada pelo Handshake. Persiste além de conexões individuais. Conexão TLS: canal peer-to-peer transitório, associada a UMA sessão, com seus próprios IVs e sequence numbers. Vantagem: Handshake usa RSA/DH (assimétrica — cara). Múltiplas conexões reutilizam parâmetros sem renegociar (abbreviated handshake). Responsável: HANDSHAKE PROTOCOL.",
+   dica:"Sessão = parâmetros persistentes. Conexão = canal transitório. Sessão existe para evitar Handshake assimétrico a cada conexão."},
+  {id:"L7Q2",lista:"L7",q:"Q2 — TLS Record Protocol",color:C.m9,
+   enunciado:`1. Qual a função do TLS Record Protocol?
+2. Quais são os dois serviços de segurança que ele provê?
+3. Qual é a posição do Record Protocol na pilha TLS?`,
+   resposta:"Função: camada base do TLS — fragmentar, comprimir (opcional), calcular MAC, cifrar, adicionar cabeçalho TLS, transmitir via TCP. Dois serviços com chaves DISTINTAS: (1) Confidencialidade: chave AES derivada do Master Secret. (2) Integridade: chave MAC distinta também derivada do Master Secret. Posição: diretamente acima do TCP, abaixo de todos os outros protocolos TLS (Handshake, Alert, CCS, Heartbeat).",
+   dica:"Record Protocol = base de tudo. Dois serviços com CHAVES DISTINTAS (uma para cifrar, outra para MAC). Opaco para a aplicação."},
+  {id:"L7Q3",lista:"L7",q:"Q3 — Handshake: fases, CipherSuite, Random e autenticação",color:C.m9,
+   enunciado:`1. Descreva as Quatro Fases do Handshake.
+2. Descreva o que é negociado na Fase 1 (ClientHello e ServerHello).
+3. Na Fase 1, tanto o cliente quanto o servidor geram um valor Random. Qual a importância para segurança?
+4. Explique a função do campo CipherSuite.
+5. Qual o motivo de ocorrer a autenticação do servidor durante o Handshake?`,
+   resposta:"Fase 1: ClientHello(versão, Client Random, CipherSuites) + ServerHello(escolhas, Server Random). Fase 2: Certificate + ServerHelloDone — autentica servidor. Fase 3: ClientKeyExchange — Pre-Master Secret cifrado com PU do servidor. Fase 4: ChangeCipherSpec + Finished. Random: previne replay + garante chaves únicas — Master Secret=PRF(PMS,'master secret',CR‖SR). CipherSuite: combo de algoritmos — ex: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 = DH efêmero+RSA+AES-GCM+SHA256. Autenticação do servidor: previne MITM — cliente verifica certificado via CA confiável.",
+   dica:"Random=unicidade+anti-replay. CipherSuite: decodificar cada campo. Fase 4: CCS antes de Finished."},
+  {id:"L7Q4",lista:"L7",q:"Q4 — Alert Protocol e Change Cipher Spec",color:C.m9,
+   enunciado:`1. Qual a finalidade do Alert Protocol? Qual é a estrutura da mensagem?
+2. O que acontece com a conexão TLS quando o Alert Protocol apresenta mensagem de nível fatal? Dê um exemplo.
+3. Qual a finalidade do Change Cipher Spec? O que essa mensagem causa?`,
+   resposta:"Alert: transmite alertas TLS — mensagens cifradas. Estrutura: 2 bytes [severidade | código]. Fatal(2): encerra CONEXÃO imediatamente; outras conexões da sessão continuam; novas na sessão não podem ser criadas. Exemplos: fatal=bad_record_mac, warning=close_notify. ChangeCipherSpec: protocolo mais simples do TLS. 1 mensagem, 1 byte, valor 1. NÃO faz parte do Handshake. Sinaliza ativação: copia CipherSpec pendente para atual → a partir daqui, usa algoritmos e chaves negociados.",
+   dica:"Fatal encerra CONEXÃO, não SESSÃO. CCS=1 byte=1. NÃO é Handshake — é sinal de ativação entre fases."},
+  {id:"L7Q5",lista:"L7",q:"Q5 — Heartbeat e Heartbleed",color:C.m9,
+   enunciado:`Heartbeat (RFC 6250) possui dois propósitos principais:
+1. Explique o propósito de "Keep-Alive".
+2. Explique o propósito de "Firewall Traversal".
+
+Heartbleed (2014) — erro de programação no OpenSSL:
+1. Descreva o comportamento ESPERADO do Heartbeat.
+2. Descreva a FALHA na vulnerabilidade Heartbleed.
+3. Explique a falha lógica: o que o servidor OpenSSL deixava de verificar?`,
+   resposta:"Keep-alive: verifica se peer está vivo sem renegociar a conexão — evita manter conexões zumbi. Firewall traversal: gera tráfego periódico para evitar que firewalls fechem conexões ociosas. Comportamento correto: servidor lê payload_length, aloca buffer, copia EXATAMENTE payload_length bytes do payload recebido → envia response. Heartbleed: payload='A'(1 byte), payload_length=65535 → servidor não verificava → alocava 65535 bytes e lia da memória adjacente → retornava até 64KB (chaves privadas RSA, cookies, senhas). Falha lógica: ausência de verificação payload_length ≤ tamanho_real do payload recebido (bounds checking em C).",
+   dica:"Heartbleed: payload_length mentido > tamanho real → lê memória além do buffer. Bug de C, não falha criptográfica."},
+];
+
+function GabItem({g,idx,total,onPrev,onNext}){
+  const[rev,setRev]=useState(false);
+  const[ok,setOk]=useState(false);
+  return <div>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+      <span style={{background:`${g.color}22`,color:g.color,fontSize:11,padding:"2px 10px",borderRadius:10,fontFamily:"monospace",fontWeight:700,border:`1px solid ${g.color}44`}}>{g.lista}</span>
+      <span style={{color:g.color,fontWeight:700,fontSize:14,flex:1}}>{g.q}</span>
+      <span style={{color:C.muted,fontSize:11,fontFamily:"monospace"}}>{idx+1}/{total}</span>
+    </div>
+
+    {/* ENUNCIADO */}
+    <div style={{background:C.card,border:`1px solid ${g.color}33`,borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+      <div style={{color:C.muted,fontSize:10,fontFamily:"monospace",letterSpacing:2,marginBottom:6}}>ENUNCIADO</div>
+      <pre style={{color:"#C0D4E4",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{g.enunciado}</pre>
+    </div>
+
+    {!rev
+      ? <button onClick={()=>setRev(true)} style={{width:"100%",background:`${g.color}15`,border:`1px solid ${g.color}`,borderRadius:7,padding:"9px",color:g.color,fontSize:13,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>Ver gabarito ↓</button>
+      : <div style={{background:"#0A0F18",border:`1px solid ${g.color}44`,borderRadius:8,padding:"12px 14px",marginBottom:10}}>
+          <div style={{color:C.muted,fontSize:10,fontFamily:"monospace",letterSpacing:2,marginBottom:6}}>GABARITO</div>
+          <pre style={{color:"#A8C4D8",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"inherit",margin:"0 0 10px"}}>{g.resposta}</pre>
+          <div style={{background:"#0A1A0A",borderLeft:`3px solid ${C.good}`,borderRadius:"0 6px 6px 0",padding:"7px 10px"}}>
+            <span style={{color:C.good,fontWeight:700,fontSize:12}}>💡 Dica: </span>
+            <span style={{color:"#7AE08A",fontSize:12}}>{g.dica}</span>
+          </div>
+        </div>
+    }
+
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+      <div onClick={()=>setOk(!ok)} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",background:ok?"#0A1A10":C.surface,border:`1px solid ${ok?C.good:C.border}`,borderRadius:6,padding:"5px 10px"}}>
+        <div style={{width:13,height:13,borderRadius:3,border:`2px solid ${ok?C.good:"#3A5A74"}`,background:ok?C.good:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {ok&&<span style={{color:C.bg,fontSize:9,fontWeight:700}}>✓</span>}
+        </div>
+        <span style={{color:ok?C.good:C.muted,fontSize:11}}>Revisada</span>
+      </div>
+      {rev&&<button onClick={()=>setRev(false)} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:5,padding:"5px 10px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>↺ Ocultar</button>}
+    </div>
+
+    <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
+      <button onClick={onPrev} disabled={idx===0} style={{flex:1,background:C.card,border:`1px solid ${idx===0?"#1A3448":C.border}`,borderRadius:6,padding:"8px",color:idx===0?"#1A3448":C.muted,fontSize:12,cursor:idx===0?"default":"pointer",fontFamily:"inherit"}}>← Anterior</button>
+      <button onClick={onNext} disabled={idx===total-1} style={{flex:1,background:C.card,border:`1px solid ${idx===total-1?"#1A3448":g.color}`,borderRadius:6,padding:"8px",color:idx===total-1?"#1A3448":g.color,fontSize:12,cursor:idx===total-1?"default":"pointer",fontFamily:"inherit"}}>Próxima →</button>
+    </div>
+  </div>;
+}
+
+export default function App(){
+  const[cur,setCur]=useState(0);
+  const[filter,setFilter]=useState("all");
+  const filtered=filter==="all"?gabarito:gabarito.filter(g=>g.lista===filter);
+  const idx=Math.min(cur,filtered.length-1);
+  const g=filtered[idx];
+  const listasUnicas=[...new Set(gabarito.map(g=>g.lista))];
+
+  return <div style={{fontFamily:"'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif",background:C.bg,minHeight:"100vh",color:C.text,paddingBottom:80}}>
+    <div style={{background:"linear-gradient(160deg,#050C14 0%,#0A1828 50%,#07101A 100%)",borderBottom:`1px solid ${C.border}`,padding:"28px 24px 18px",textAlign:"center",position:"relative",overflow:"hidden"}}>
+      {[C.m5,C.m6,C.m7,C.m8,C.m9].map((col,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",border:`1px solid ${col}14`,width:[360,260,420,300,240][i],height:[360,260,420,300,240][i],top:["-170px","-35px","-200px","15px","-75px"][i],left:["3%","63%","-6%","74%","43%"][i],pointerEvents:"none"}}/>)}
+      <div style={{fontSize:10,letterSpacing:6,color:C.muted,textTransform:"uppercase",marginBottom:8,fontFamily:"monospace"}}>ICP473 · P2 · Gabarito Geral</div>
+      <h1 style={{fontSize:"clamp(18px,4vw,28px)",fontWeight:700,color:"#F5EDE0",margin:"0 0 5px"}}>Gabarito Comentado — L3 a L7</h1>
+      <p style={{color:"#4A7090",fontSize:13,margin:"0 0 4px",fontStyle:"italic"}}>Enunciado completo · Gabarito objetivo · Dica de memorização</p>
+      <p style={{color:C.warn,fontSize:12,fontFamily:"monospace",margin:"0 0 14px"}}>{gabarito.length} questões · Prova Qua 17/06</p>
+      <div style={{display:"flex",gap:5,justifyContent:"center",flexWrap:"wrap"}}>
+        {listasUnicas.map(lista=>{
+          const cor=gabarito.find(g=>g.lista===lista)?.color||C.accent;
+          return <button key={lista} onClick={()=>{setFilter(lista);setCur(0);}} style={{background:filter===lista?`${cor}30`:`${cor}12`,border:`1px solid ${filter===lista?cor:`${cor}33`}`,borderRadius:14,padding:"2px 10px",fontSize:11,fontFamily:"monospace",color:filter===lista?cor:`${cor}88`,cursor:"pointer"}}>{lista}</button>;
+        })}
+        <button onClick={()=>{setFilter("all");setCur(0);}} style={{background:filter==="all"?"#1A3040":"transparent",border:`1px solid ${filter==="all"?C.accent:C.border}`,borderRadius:14,padding:"2px 10px",fontSize:11,fontFamily:"monospace",color:filter==="all"?C.accent:C.muted,cursor:"pointer"}}>Todas</button>
+      </div>
+    </div>
+
+    <div style={{maxWidth:800,margin:"0 auto",padding:"18px 16px 0"}}>
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:16}}>
+        {filtered.map((gi,i)=>(
+          <button key={gi.id} onClick={()=>setCur(i)} style={{background:i===idx?`${gi.color}30`:`${gi.color}12`,border:`1px solid ${i===idx?gi.color:`${gi.color}33`}`,borderRadius:10,padding:"2px 8px",fontSize:10,fontFamily:"monospace",color:i===idx?gi.color:`${gi.color}77`,cursor:"pointer"}}>{gi.q.split("—")[0].trim()}</button>
+        ))}
+      </div>
+      {g&&<GabItem g={g} idx={idx} total={filtered.length} onPrev={()=>setCur(c=>Math.max(0,c-1))} onNext={()=>setCur(c=>Math.min(filtered.length-1,c+1))}/>}
+    </div>
+  </div>;
+}
