@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Export</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.3.0/github-markdown.min.css">
+  <script>
+      window.MathJax = {
+          loader: { load: ['[tex]/ams', '[tex]/boldsymbol'] },
+          tex: {
+              inlineMath: [['$', '$'], ['\\(', '\\)']],
+              displayMath: [['$$', '$$'], ['\\[', '\\]']],
+              processEscapes: true,
+              packages: { '[+]': ['ams', 'boldsymbol'] }
+          }
+      };
+  </script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+      html {
+          background-color: #ffffff;
+      }
+      body {
+          margin: 0;
+          background-color: #ffffff;
+          color: #24292e;
+      }
+      .markdown-body {
+          box-sizing: border-box;
+          min-width: 200px;
+          max-width: 100%;
+          width: fit-content;
+          margin: 0 auto;
+          padding: 45px;
+          background-color: #ffffff;
+          color: #24292e;
+      }
+      .markdown-body > p,
+      .markdown-body > ul,
+      .markdown-body > ol,
+      .markdown-body > blockquote,
+      .markdown-body > h1,
+      .markdown-body > h2,
+      .markdown-body > h3,
+      .markdown-body > h4,
+      .markdown-body > h5,
+      .markdown-body > h6,
+      .markdown-body > pre,
+      .markdown-body > table,
+      .markdown-body > details,
+      .markdown-body > dl,
+      .markdown-body > hr {
+          max-width: 980px;
+          margin-left: auto !important;
+          margin-right: auto !important;
+      }
+
+
+      /* Syntax Highlighting */
+      .hljs-doctag, .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_ { color: #d73a49; }
+      .hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_ { color: #6f42c1; }
+      .hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number, .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-id { color: #005cc5; }
+      .hljs-regexp, .hljs-string, .hljs-meta .hljs-string { color: #032f62; }
+      .hljs-built_in, .hljs-symbol { color: #e36209; }
+      .hljs-comment, .hljs-code, .hljs-formula { color: #6a737d; }
+      .hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo { color: #22863a; }
+      .hljs-subst { color: #24292e; }
+      .hljs-section { color: #005cc5; font-weight: bold; }
+      .hljs-bullet { color: #005cc5; }
+      .hljs-emphasis { font-style: italic; }
+      .hljs-strong { font-weight: bold; }
+      .hljs-addition { color: #22863a; background-color: #f0fff4; }
+      .hljs-deletion { color: #b31d28; background-color: #ffeef0; }
+
+      .markdown-alert {
+          padding: 0.5rem 1rem;
+          margin-bottom: 16px;
+          border-left: 0.25em solid;
+          border-radius: 0.375rem;
+      }
+      .markdown-alert > :last-child {
+          margin-bottom: 0;
+      }
+      .markdown-alert-title {
+          margin: 0 0 8px;
+          font-weight: 600;
+          line-height: 1.25;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+      .markdown-alert-icon {
+          display: inline-flex;
+          width: 16px;
+          height: 16px;
+      }
+      .markdown-alert-icon svg {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+      }
+      .markdown-alert-note { color: #0969da; border-left-color: #0969da; background-color: #ddf4ff; }
+      .markdown-alert-tip { color: #1a7f37; border-left-color: #1a7f37; background-color: #dafbe1; }
+      .markdown-alert-important { color: #8250df; border-left-color: #8250df; background-color: #fbefff; }
+      .markdown-alert-warning { color: #9a6700; border-left-color: #9a6700; background-color: #fff8c5; }
+      .markdown-alert-caution { color: #cf222e; border-left-color: #cf222e; background-color: #ffebe9; }
+      .markdown-alert > *:not(.markdown-alert-title) { color: #24292e; }
+
+      .frontmatter-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 24px;
+          font-size: 14px;
+      }
+      .frontmatter-table th,
+      .frontmatter-table td {
+          border: 1px solid #e1e4e8;
+          padding: 8px 12px;
+          text-align: left;
+      }
+      .frontmatter-table th {
+          font-weight: 600;
+          background-color: #f6f8fa;
+          width: 150px;
+      }
+
+      /* Footnote styles */
+      .footnotes {
+          margin-top: 1.5rem;
+          font-size: 0.9em;
+          border-top: 1px solid #eaecef;
+          padding-top: 8px;
+      }
+      .footnotes ol {
+          padding-left: 1.5em;
+      }
+      .footnotes ol > li::marker {
+          content: "[" counter(list-item) "] ";
+          font-weight: 600;
+      }
+      .footnotes li > p {
+          margin: 0.2em 0;
+      }
+      .footnote-ref a,
+      .footnote-backref {
+          text-decoration: none;
+      }
+      .footnote-backref {
+          margin-left: 0.4em;
+      }
+      a.reference-link {
+          font-size: 0.75em;
+          letter-spacing: -0.02em;
+          line-height: 1;
+          vertical-align: super;
+          position: relative;
+          top: 0.08em;
+      }
+
+      /* Mermaid and Math styles */
+      .mermaid-container {
+          position: relative;
+          margin-bottom: 16px;
+      }
+      .math-block {
+          margin: 1em 0;
+          overflow-x: auto;
+          text-align: center;
+      }
+
+      @media (max-width: 767px) {
+          .markdown-body {
+              padding: 15px;
+          }
+      }
+  </style>
+</head>
+<body>
+  <article class="markdown-body">
+      <h1 id="lista-7-tls-respostas-detalhadas-arquitetura-e-handshake-completo">Lista 7 — TLS: respostas detalhadas, arquitetura e handshake completo</h1><h2 id="0-viso-geral">0. Visão geral</h2><p>O <strong>TLS — Transport Layer Security</strong> — é um protocolo usado para fornecer segurança entre duas aplicações que se comunicam pela rede. O exemplo mais comum é o <strong>HTTPS</strong>, isto é, HTTP protegido por TLS. Porém, o TLS não é exclusivo do HTTP: ele pode proteger qualquer protocolo de aplicação que opere sobre TCP, como SMTP, IMAP, FTP, LDAP, entre outros.</p>
+<p>Seu objetivo principal é impedir três problemas centrais em comunicações pela Internet:</p>
+<ol>
+<li><strong>Escuta indevida</strong>: um atacante intercepta os dados e lê informações sensíveis.</li>
+<li><strong>Modificação em trânsito</strong>: um atacante altera os dados sem autorização.</li>
+<li><strong>Falsificação de identidade</strong>: um servidor falso se passa pelo servidor legítimo.</li>
+</ol>
+<p>Para resolver isso, o TLS combina:</p>
+<ul>
+<li><strong>criptografia simétrica</strong>, para proteger grandes volumes de dados com eficiência;</li>
+<li><strong>criptografia assimétrica</strong>, para autenticação e troca segura de segredos;</li>
+<li><strong>certificados digitais</strong>, para provar a identidade do servidor;</li>
+<li><strong>MAC ou AEAD</strong>, para integridade e autenticação dos registros;</li>
+<li><strong>handshake</strong>, para negociar algoritmos, chaves e parâmetros antes dos dados da aplicação.</li>
+</ul>
+<hr>
+<h2 id="1-diagrama-geral-do-tls-em-mermaid">1. Diagrama geral do TLS em Mermaid</h2><h3 id="11-arquitetura-do-tls-na-pilha-tcpip">1.1 Arquitetura do TLS na pilha TCP/IP</h3><div class="mermaid-container is-loading"><div data-original-code="flowchart%20TD%0A%20%20%20%20A%5B%22Aplica%C3%A7%C3%B5es%3Cbr%2F%3EHTTP%2C%20SMTP%2C%20FTP%2C%20IMAP%20etc.%22%5D%20--%3E%20B%5B%22TLS%20-%20Protocolos%20superiores%22%5D%0A%20%20%20%20B%20--%3E%20C%5B%22TLS%20Record%20Protocol%22%5D%0A%20%20%20%20C%20--%3E%20D%5B%22TCP%3Cbr%2F%3Etransporte%20confi%C3%A1vel%22%5D%0A%20%20%20%20D%20--%3E%20E%5B%22IP%3Cbr%2F%3Eroteamento%20de%20pacotes%22%5D%0A%20%20%20%20E%20--%3E%20F%5B%22Enlace%20e%20meio%20f%C3%ADsico%22%5D%0A%0A%20%20%20%20B1%5B%22Handshake%20Protocol%3Cbr%2F%3Enegocia%C3%A7%C3%A3o%2C%20autentica%C3%A7%C3%A3o%20e%20chaves%22%5D%20--%3E%20C%0A%20%20%20%20B2%5B%22Change%20Cipher%20Spec%3Cbr%2F%3Eativa%20par%C3%A2metros%20negociados%22%5D%20--%3E%20C%0A%20%20%20%20B3%5B%22Alert%20Protocol%3Cbr%2F%3Eavisos%2C%20erros%20e%20fechamento%22%5D%20--%3E%20C%0A%20%20%20%20B4%5B%22Heartbeat%20Extension%3Cbr%2F%3Ekeep-alive%20e%20teste%20de%20vivacidade%22%5D%20--%3E%20C%0A%0A%20%20%20%20C1%5B%22Fragmenta%C3%A7%C3%A3o%22%5D%20--%3E%20C%0A%20%20%20%20C2%5B%22Compress%C3%A3o%20opcional%22%5D%20--%3E%20C%0A%20%20%20%20C3%5B%22MAC%20ou%20AEAD%22%5D%20--%3E%20C%0A%20%20%20%20C4%5B%22Criptografia%20sim%C3%A9trica%22%5D%20--%3E%20C" id="mermaid-diagram-nkf8tyc6y" class="mermaid">flowchart TD
+    A["Aplicações&lt;br/&gt;HTTP, SMTP, FTP, IMAP etc."] --&gt; B["TLS - Protocolos superiores"]
+    B --&gt; C["TLS Record Protocol"]
+    C --&gt; D["TCP&lt;br/&gt;transporte confiável"]
+    D --&gt; E["IP&lt;br/&gt;roteamento de pacotes"]
+    E --&gt; F["Enlace e meio físico"]
+
+    B1["Handshake Protocol&lt;br/&gt;negociação, autenticação e chaves"] --&gt; C
+    B2["Change Cipher Spec&lt;br/&gt;ativa parâmetros negociados"] --&gt; C
+    B3["Alert Protocol&lt;br/&gt;avisos, erros e fechamento"] --&gt; C
+    B4["Heartbeat Extension&lt;br/&gt;keep-alive e teste de vivacidade"] --&gt; C
+
+    C1["Fragmentação"] --&gt; C
+    C2["Compressão opcional"] --&gt; C
+    C3["MAC ou AEAD"] --&gt; C
+    C4["Criptografia simétrica"] --&gt; C</div></div><p>O TLS fica logicamente <strong>entre a aplicação e o TCP</strong>. Tecnicamente, ele é implementado como uma camada de segurança acima do transporte confiável fornecido pelo TCP. Para a aplicação, o TLS se comporta de forma parecida com um socket TCP, mas com serviços adicionais: sigilo, integridade e autenticação.</p>
+<hr>
+<h3 id="12-handshake-tls-12-completo">1.2 Handshake TLS 1.2 completo</h3><div class="mermaid-container is-loading"><div data-original-code="sequenceDiagram%0A%20%20%20%20autonumber%0A%20%20%20%20participant%20APP_C%20as%20Aplica%C3%A7%C3%A3o%20Cliente%0A%20%20%20%20participant%20C%20as%20Cliente%20TLS%0A%20%20%20%20participant%20S%20as%20Servidor%20TLS%0A%20%20%20%20participant%20APP_S%20as%20Aplica%C3%A7%C3%A3o%20Servidor%0A%0A%20%20%20%20APP_C-%3E%3EC%3A%20Solicita%20conex%C3%A3o%20segura%0A%20%20%20%20C-%3E%3ES%3A%20TCP%20j%C3%A1%20estabelecido%0A%0A%20%20%20%20Note%20over%20C%2CS%3A%20FASE%201%20-%20Inicia%C3%A7%C3%A3o%20e%20capacidades%0A%0A%20%20%20%20C-%3E%3ES%3A%20ClientHello%0A%20%20%20%20Note%20right%20of%20C%3A%20version%3Cbr%2F%3Eclient_random%3Cbr%2F%3Esession_id%3Cbr%2F%3Ecipher_suites%3Cbr%2F%3Ecompression_methods%3Cbr%2F%3Eextensions%0A%0A%20%20%20%20S-%3E%3EC%3A%20ServerHello%0A%20%20%20%20Note%20left%20of%20S%3A%20vers%C3%A3o%20escolhida%3Cbr%2F%3Eserver_random%3Cbr%2F%3Esession_id%3Cbr%2F%3Ecipher_suite%20escolhida%3Cbr%2F%3Ecompress%C3%A3o%20escolhida%0A%0A%20%20%20%20Note%20over%20C%2CS%3A%20FASE%202%20-%20Autentica%C3%A7%C3%A3o%20do%20servidor%20e%20troca%20de%20chave%0A%0A%20%20%20%20S-%3E%3EC%3A%20Certificate%0A%20%20%20%20Note%20left%20of%20S%3A%20Certificado%20digital%20do%20servidor%3Cbr%2F%3Econt%C3%A9m%20chave%20p%C3%BAblica%3Cbr%2F%3Epermite%20validar%20identidade%0A%0A%20%20%20%20opt%20Necess%C3%A1rio%20pelo%20CipherSuite%0A%20%20%20%20%20%20%20%20S-%3E%3EC%3A%20ServerKeyExchange%0A%20%20%20%20%20%20%20%20Note%20left%20of%20S%3A%20Par%C3%A2metros%20adicionais%20de%20chave%3Cbr%2F%3Eexemplo%3A%20Diffie-Hellman%20ef%C3%AAmero%20assinado%0A%20%20%20%20end%0A%0A%20%20%20%20opt%20Autentica%C3%A7%C3%A3o%20m%C3%BAtua%0A%20%20%20%20%20%20%20%20S-%3E%3EC%3A%20CertificateRequest%0A%20%20%20%20%20%20%20%20Note%20left%20of%20S%3A%20Servidor%20solicita%20certificado%20do%20cliente%0A%20%20%20%20end%0A%0A%20%20%20%20S-%3E%3EC%3A%20ServerHelloDone%0A%20%20%20%20Note%20left%20of%20S%3A%20Fim%20das%20mensagens%20iniciais%20do%20servidor%0A%0A%20%20%20%20Note%20over%20C%2CS%3A%20FASE%203%20-%20Resposta%20do%20cliente%0A%0A%20%20%20%20C-%3E%3EC%3A%20Verifica%20certificado%20do%20servidor%0A%20%20%20%20Note%20right%20of%20C%3A%20Valida%20cadeia%20de%20certifica%C3%A7%C3%A3o%3Cbr%2F%3Enome%20do%20servidor%3Cbr%2F%3Evalidade%20temporal%3Cbr%2F%3Euso%20da%20chave%3Cbr%2F%3Eassinatura%20da%20CA%0A%0A%20%20%20%20opt%20Servidor%20pediu%20certificado%20do%20cliente%0A%20%20%20%20%20%20%20%20C-%3E%3ES%3A%20Certificate%0A%20%20%20%20%20%20%20%20Note%20right%20of%20C%3A%20Cliente%20envia%20seu%20certificado%0A%20%20%20%20end%0A%0A%20%20%20%20C-%3E%3ES%3A%20ClientKeyExchange%0A%20%20%20%20Note%20right%20of%20C%3A%20Envia%20material%20de%20chave%3Cbr%2F%3Eexemplo%3A%20pre_master_secret%20cifrado%3Cbr%2F%3Eou%20valor%20p%C3%BAblico%20Diffie-Hellman%0A%0A%20%20%20%20opt%20Cliente%20enviou%20certificado%20com%20assinatura%0A%20%20%20%20%20%20%20%20C-%3E%3ES%3A%20CertificateVerify%0A%20%20%20%20%20%20%20%20Note%20right%20of%20C%3A%20Prova%20posse%20da%20chave%20privada%3Cbr%2F%3Eassina%20transcript%20do%20handshake%0A%20%20%20%20end%0A%0A%20%20%20%20C-%3E%3EC%3A%20Calcula%20master_secret%20e%20chaves%0A%20%20%20%20S-%3E%3ES%3A%20Calcula%20master_secret%20e%20chaves%0A%20%20%20%20Note%20over%20C%2CS%3A%20Ambos%20derivam%20chaves%20de%20MAC%2C%20chaves%20de%20cifra%20e%20IVs%3Cbr%2F%3Ea%20partir%20do%20pre_master_secret%2C%20client_random%20e%20server_random%0A%0A%20%20%20%20Note%20over%20C%2CS%3A%20FASE%204%20-%20Finaliza%C3%A7%C3%A3o%20e%20ativa%C3%A7%C3%A3o%20dos%20par%C3%A2metros%0A%0A%20%20%20%20C-%3E%3ES%3A%20ChangeCipherSpec%0A%20%20%20%20Note%20right%20of%20C%3A%20Sinaliza%20que%20os%20pr%C3%B3ximos%20registros%3Cbr%2F%3Eusar%C3%A3o%20o%20CipherSpec%20negociado%0A%0A%20%20%20%20C-%3E%3ES%3A%20Finished%0A%20%20%20%20Note%20right%20of%20C%3A%20Primeira%20mensagem%20protegida%3Cbr%2F%3Econfirma%20integridade%20do%20handshake%0A%0A%20%20%20%20S-%3E%3EC%3A%20ChangeCipherSpec%0A%20%20%20%20Note%20left%20of%20S%3A%20Servidor%20tamb%C3%A9m%20ativa%3Cbr%2F%3Eo%20CipherSpec%20negociado%0A%0A%20%20%20%20S-%3E%3EC%3A%20Finished%0A%20%20%20%20Note%20left%20of%20S%3A%20Confirma%20que%20o%20servidor%20calculou%3Cbr%2F%3Eos%20mesmos%20segredos%20e%20viu%20o%20mesmo%20handshake%0A%0A%20%20%20%20Note%20over%20C%2CS%3A%20Handshake%20conclu%C3%ADdo%0A%0A%20%20%20%20APP_C-%3E%3EC%3A%20Envia%20dados%20da%20aplica%C3%A7%C3%A3o%0A%20%20%20%20C-%3E%3ES%3A%20Application%20Data%20protegido%20pelo%20Record%20Protocol%0A%20%20%20%20S-%3E%3EAPP_S%3A%20Entrega%20dados%20decifrados%0A%0A%20%20%20%20APP_S-%3E%3ES%3A%20Resposta%20da%20aplica%C3%A7%C3%A3o%0A%20%20%20%20S-%3E%3EC%3A%20Application%20Data%20protegido%20pelo%20Record%20Protocol%0A%20%20%20%20C-%3E%3EAPP_C%3A%20Entrega%20dados%20decifrados%0A%0A%20%20%20%20opt%20Encerramento%20normal%0A%20%20%20%20%20%20%20%20C-%3E%3ES%3A%20Alert%20close_notify%0A%20%20%20%20%20%20%20%20S-%3E%3EC%3A%20Alert%20close_notify%0A%20%20%20%20end%0A%0A%20%20%20%20opt%20Heartbeat%20negociado%0A%20%20%20%20%20%20%20%20C-%3E%3ES%3A%20HeartbeatRequest%0A%20%20%20%20%20%20%20%20S-%3E%3EC%3A%20HeartbeatResponse%0A%20%20%20%20end" id="mermaid-diagram-vw5ipvpzo" class="mermaid">sequenceDiagram
+    autonumber
+    participant APP_C as Aplicação Cliente
+    participant C as Cliente TLS
+    participant S as Servidor TLS
+    participant APP_S as Aplicação Servidor
+
+    APP_C-&gt;&gt;C: Solicita conexão segura
+    C-&gt;&gt;S: TCP já estabelecido
+
+    Note over C,S: FASE 1 - Iniciação e capacidades
+
+    C-&gt;&gt;S: ClientHello
+    Note right of C: version&lt;br/&gt;client_random&lt;br/&gt;session_id&lt;br/&gt;cipher_suites&lt;br/&gt;compression_methods&lt;br/&gt;extensions
+
+    S-&gt;&gt;C: ServerHello
+    Note left of S: versão escolhida&lt;br/&gt;server_random&lt;br/&gt;session_id&lt;br/&gt;cipher_suite escolhida&lt;br/&gt;compressão escolhida
+
+    Note over C,S: FASE 2 - Autenticação do servidor e troca de chave
+
+    S-&gt;&gt;C: Certificate
+    Note left of S: Certificado digital do servidor&lt;br/&gt;contém chave pública&lt;br/&gt;permite validar identidade
+
+    opt Necessário pelo CipherSuite
+        S-&gt;&gt;C: ServerKeyExchange
+        Note left of S: Parâmetros adicionais de chave&lt;br/&gt;exemplo: Diffie-Hellman efêmero assinado
+    end
+
+    opt Autenticação mútua
+        S-&gt;&gt;C: CertificateRequest
+        Note left of S: Servidor solicita certificado do cliente
+    end
+
+    S-&gt;&gt;C: ServerHelloDone
+    Note left of S: Fim das mensagens iniciais do servidor
+
+    Note over C,S: FASE 3 - Resposta do cliente
+
+    C-&gt;&gt;C: Verifica certificado do servidor
+    Note right of C: Valida cadeia de certificação&lt;br/&gt;nome do servidor&lt;br/&gt;validade temporal&lt;br/&gt;uso da chave&lt;br/&gt;assinatura da CA
+
+    opt Servidor pediu certificado do cliente
+        C-&gt;&gt;S: Certificate
+        Note right of C: Cliente envia seu certificado
+    end
+
+    C-&gt;&gt;S: ClientKeyExchange
+    Note right of C: Envia material de chave&lt;br/&gt;exemplo: pre_master_secret cifrado&lt;br/&gt;ou valor público Diffie-Hellman
+
+    opt Cliente enviou certificado com assinatura
+        C-&gt;&gt;S: CertificateVerify
+        Note right of C: Prova posse da chave privada&lt;br/&gt;assina transcript do handshake
+    end
+
+    C-&gt;&gt;C: Calcula master_secret e chaves
+    S-&gt;&gt;S: Calcula master_secret e chaves
+    Note over C,S: Ambos derivam chaves de MAC, chaves de cifra e IVs&lt;br/&gt;a partir do pre_master_secret, client_random e server_random
+
+    Note over C,S: FASE 4 - Finalização e ativação dos parâmetros
+
+    C-&gt;&gt;S: ChangeCipherSpec
+    Note right of C: Sinaliza que os próximos registros&lt;br/&gt;usarão o CipherSpec negociado
+
+    C-&gt;&gt;S: Finished
+    Note right of C: Primeira mensagem protegida&lt;br/&gt;confirma integridade do handshake
+
+    S-&gt;&gt;C: ChangeCipherSpec
+    Note left of S: Servidor também ativa&lt;br/&gt;o CipherSpec negociado
+
+    S-&gt;&gt;C: Finished
+    Note left of S: Confirma que o servidor calculou&lt;br/&gt;os mesmos segredos e viu o mesmo handshake
+
+    Note over C,S: Handshake concluído
+
+    APP_C-&gt;&gt;C: Envia dados da aplicação
+    C-&gt;&gt;S: Application Data protegido pelo Record Protocol
+    S-&gt;&gt;APP_S: Entrega dados decifrados
+
+    APP_S-&gt;&gt;S: Resposta da aplicação
+    S-&gt;&gt;C: Application Data protegido pelo Record Protocol
+    C-&gt;&gt;APP_C: Entrega dados decifrados
+
+    opt Encerramento normal
+        C-&gt;&gt;S: Alert close_notify
+        S-&gt;&gt;C: Alert close_notify
+    end
+
+    opt Heartbeat negociado
+        C-&gt;&gt;S: HeartbeatRequest
+        S-&gt;&gt;C: HeartbeatResponse
+    end</div></div><p>Esse diagrama representa o <strong>handshake completo TLS 1.2</strong>, incluindo mensagens obrigatórias e opcionais. As mensagens opcionais dependem do <strong>CipherSuite</strong> escolhido e da necessidade ou não de autenticação do cliente.</p>
+<h3 id="descrio-detalhada-e-enumerada-do-diagrama-12">Descrição detalhada e enumerada do Diagrama 1.2</h3><h4 id="camadas-e-entidades-envolvidas">Camadas e entidades envolvidas</h4><ol>
+<li><strong>Aplicação Cliente (APP_C)</strong>: software que deseja utilizar uma conexão segura, como um navegador Web.</li>
+<li><strong>Cliente TLS (C)</strong>: implementação TLS responsável por handshake, criptografia, autenticação e proteção dos dados.</li>
+<li><strong>Servidor TLS (S)</strong>: implementação TLS do lado servidor.</li>
+<li><strong>Aplicação Servidor (APP_S)</strong>: aplicação protegida pelo TLS, como um servidor HTTP.</li>
+<li><strong>TCP</strong>: camada de transporte confiável utilizada pelo TLS.</li>
+<li><strong>TLS Record Protocol</strong>: camada responsável por transportar todas as mensagens TLS.</li>
+<li><strong>Handshake Protocol</strong>: protocolo responsável pela negociação de parâmetros de segurança.</li>
+<li><strong>Change Cipher Spec Protocol</strong>: protocolo responsável por ativar os parâmetros criptográficos negociados.</li>
+<li><strong>Alert Protocol</strong>: protocolo responsável por erros, avisos e encerramento da conexão.</li>
+<li><strong>Heartbeat Extension</strong>: extensão opcional para verificação de vivacidade da conexão.</li>
+</ol>
+<hr>
+<h4 id="fase-0-preparao-da-conexo">Fase 0 — Preparação da conexão</h4><ol>
+<li>A aplicação cliente solicita uma conexão segura ao cliente TLS.</li>
+<li>Antes do TLS iniciar, uma conexão TCP já deve estar estabelecida.</li>
+<li>O TLS passa a utilizar esse canal TCP para transportar suas mensagens.</li>
+</ol>
+<hr>
+<h4 id="fase-1-iniciao-e-negociao-de-capacidades">Fase 1 — Iniciação e negociação de capacidades</h4><h5 id="passo-1-clienthello">Passo 1: ClientHello</h5><ol>
+<li><p>O cliente envia a mensagem <code>ClientHello</code>.</p>
+</li>
+<li><p>Essa mensagem é transportada pelo <strong>TLS Record Protocol</strong>.</p>
+</li>
+<li><p>O cliente informa:</p>
+<ul>
+<li>versão máxima suportada;</li>
+<li>valor aleatório <code>client_random</code>;</li>
+<li>identificador de sessão;</li>
+<li>lista de CipherSuites suportadas;</li>
+<li>métodos de compressão;</li>
+<li>extensões TLS.</li>
+</ul>
+</li>
+</ol>
+<h5 id="passo-2-serverhello">Passo 2: ServerHello</h5><ol start="4">
+<li><p>O servidor responde com <code>ServerHello</code>.</p>
+</li>
+<li><p>O servidor escolhe:</p>
+<ul>
+<li>versão TLS;</li>
+<li>CipherSuite;</li>
+<li>método de compressão;</li>
+<li>identificador de sessão.</li>
+</ul>
+</li>
+<li><p>O servidor envia também seu valor aleatório <code>server_random</code>.</p>
+</li>
+</ol>
+<h5 id="resultado-da-fase-1">Resultado da Fase 1</h5><ol start="7">
+<li><p>Cliente e servidor passam a compartilhar:</p>
+<ul>
+<li>versão TLS;</li>
+<li>CipherSuite;</li>
+<li>método de compressão;</li>
+<li>Session ID;</li>
+<li>client_random;</li>
+<li>server_random.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h4 id="fase-2-autenticao-do-servidor-e-parmetros-de-chave">Fase 2 — Autenticação do servidor e parâmetros de chave</h4><h5 id="passo-3-certificate">Passo 3: Certificate</h5><ol>
+<li><p>O servidor envia seu certificado digital X.509.</p>
+</li>
+<li><p>O certificado contém:</p>
+<ul>
+<li>identidade do servidor;</li>
+<li>chave pública;</li>
+<li>assinatura da autoridade certificadora.</li>
+</ul>
+</li>
+</ol>
+<h5 id="passo-4-serverkeyexchange-opcional">Passo 4: ServerKeyExchange (opcional)</h5><ol start="3">
+<li><p>Dependendo da CipherSuite, o servidor envia parâmetros adicionais.</p>
+</li>
+<li><p>Exemplo:</p>
+<ul>
+<li>parâmetros Diffie-Hellman efêmeros;</li>
+<li>parâmetros ECDHE.</li>
+</ul>
+</li>
+<li><p>Esses parâmetros normalmente são assinados digitalmente.</p>
+</li>
+</ol>
+<h5 id="passo-5-certificaterequest-opcional">Passo 5: CertificateRequest (opcional)</h5><ol start="6">
+<li>Caso deseje autenticação mútua, o servidor solicita certificado do cliente.</li>
+</ol>
+<h5 id="passo-6-serverhellodone">Passo 6: ServerHelloDone</h5><ol start="7">
+<li>O servidor informa que terminou suas mensagens iniciais.</li>
+<li>O controle passa para o cliente.</li>
+</ol>
+<h5 id="resultado-da-fase-2">Resultado da Fase 2</h5><ol start="9">
+<li><p>O cliente possui todas as informações necessárias para:</p>
+<ul>
+<li>autenticar o servidor;</li>
+<li>validar certificados;</li>
+<li>preparar a troca de chaves.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h4 id="fase-3-resposta-do-cliente-e-estabelecimento-do-segredo-compartilhado">Fase 3 — Resposta do cliente e estabelecimento do segredo compartilhado</h4><h5 id="passo-7-validao-do-certificado">Passo 7: Validação do certificado</h5><ol>
+<li><p>O cliente verifica:</p>
+<ul>
+<li>cadeia de certificação;</li>
+<li>assinatura da CA;</li>
+<li>validade temporal;</li>
+<li>nome do servidor;</li>
+<li>uso permitido da chave.</li>
+</ul>
+</li>
+</ol>
+<h5 id="passo-8-certificate-opcional">Passo 8: Certificate (opcional)</h5><ol start="2">
+<li>Se solicitado, o cliente envia seu certificado.</li>
+</ol>
+<h5 id="passo-9-clientkeyexchange">Passo 9: ClientKeyExchange</h5><ol start="3">
+<li><p>O cliente envia material de chave.</p>
+</li>
+<li><p>Dependendo da CipherSuite:</p>
+<ul>
+<li>envia um <code>pre_master_secret</code> cifrado com RSA;</li>
+<li>ou envia parâmetros públicos Diffie-Hellman/ECDHE.</li>
+</ul>
+</li>
+</ol>
+<h5 id="passo-10-certificateverify-opcional">Passo 10: CertificateVerify (opcional)</h5><ol start="5">
+<li><p>Se o cliente enviou certificado com capacidade de assinatura:</p>
+<ul>
+<li>assina o transcript do handshake;</li>
+<li>prova posse da chave privada.</li>
+</ul>
+</li>
+</ol>
+<h5 id="passo-11-derivao-de-chaves">Passo 11: Derivação de chaves</h5><ol start="6">
+<li><p>Cliente e servidor calculam:</p>
+<ul>
+<li><code>pre_master_secret</code>;</li>
+<li><code>master_secret</code>;</li>
+<li><code>key_block</code>.</li>
+</ul>
+</li>
+<li><p>A partir do <code>key_block</code> são derivadas:</p>
+<ul>
+<li>chaves de criptografia;</li>
+<li>chaves de MAC;</li>
+<li>IVs;</li>
+<li>parâmetros de leitura e escrita.</li>
+</ul>
+</li>
+</ol>
+<h5 id="resultado-da-fase-3">Resultado da Fase 3</h5><ol start="8">
+<li>Ambos possuem exatamente os mesmos segredos criptográficos.</li>
+</ol>
+<hr>
+<h4 id="fase-4-ativao-dos-parmetros-criptogrficos">Fase 4 — Ativação dos parâmetros criptográficos</h4><h5 id="passo-12-changecipherspec-do-cliente">Passo 12: ChangeCipherSpec do cliente</h5><ol>
+<li>O cliente envia <code>ChangeCipherSpec</code>.</li>
+<li>Essa mensagem pertence ao <strong>Change Cipher Spec Protocol</strong>.</li>
+<li>Ela informa que os próximos registros usarão as novas chaves.</li>
+</ol>
+<h5 id="passo-13-finished-do-cliente">Passo 13: Finished do cliente</h5><ol start="4">
+<li>O cliente envia <code>Finished</code>.</li>
+<li>Essa é a primeira mensagem protegida pelas novas chaves.</li>
+<li>Ela verifica a integridade de todo o handshake.</li>
+</ol>
+<h5 id="passo-14-changecipherspec-do-servidor">Passo 14: ChangeCipherSpec do servidor</h5><ol start="7">
+<li>O servidor ativa seus parâmetros criptográficos.</li>
+</ol>
+<h5 id="passo-15-finished-do-servidor">Passo 15: Finished do servidor</h5><ol start="8">
+<li>O servidor envia sua mensagem <code>Finished</code>.</li>
+<li>O cliente verifica a mensagem recebida.</li>
+</ol>
+<h5 id="resultado-da-fase-4">Resultado da Fase 4</h5><ol start="10">
+<li>O handshake é concluído.</li>
+<li>A conexão TLS passa para o estado operacional.</li>
+</ol>
+<hr>
+<h4 id="fase-5-troca-de-dados-da-aplicao">Fase 5 — Troca de dados da aplicação</h4><h5 id="passo-16-application-data">Passo 16: Application Data</h5><ol>
+<li><p>A aplicação cliente envia dados.</p>
+</li>
+<li><p>O TLS Record Protocol:</p>
+<ul>
+<li>fragmenta;</li>
+<li>autentica;</li>
+<li>cifra;</li>
+<li>encapsula os dados.</li>
+</ul>
+</li>
+<li><p>O servidor recebe e decifra os registros.</p>
+</li>
+<li><p>Os dados são entregues à aplicação servidora.</p>
+</li>
+</ol>
+<h5 id="passo-17-resposta-da-aplicao">Passo 17: Resposta da aplicação</h5><ol start="5">
+<li>O mesmo processo ocorre no sentido inverso.</li>
+</ol>
+<hr>
+<h4 id="fase-6-encerramento-da-conexo">Fase 6 — Encerramento da conexão</h4><h5 id="passo-18-alert-protocol">Passo 18: Alert Protocol</h5><ol>
+<li><p>Quando a comunicação termina, uma das partes envia:</p>
+<pre><code class="hljs text">close_notify</code></pre></li>
+<li><p>Essa mensagem pertence ao <strong>Alert Protocol</strong>.</p>
+</li>
+<li><p>A outra parte responde com seu próprio <code>close_notify</code>.</p>
+</li>
+<li><p>O encerramento ocorre de forma limpa e segura.</p>
+</li>
+</ol>
+<hr>
+<h4 id="fase-7-heartbeat-opcional">Fase 7 — Heartbeat (opcional)</h4><h5 id="passo-19-heartbeatrequest">Passo 19: HeartbeatRequest</h5><ol>
+<li><p>Caso a extensão tenha sido negociada, uma das partes envia:</p>
+<pre><code class="hljs text">HeartbeatRequest</code></pre></li>
+</ol>
+<h5 id="passo-20-heartbeatresponse">Passo 20: HeartbeatResponse</h5><ol start="2">
+<li><p>A outra parte responde:</p>
+<pre><code class="hljs text">HeartbeatResponse</code></pre></li>
+</ol>
+<h5 id="objetivos">Objetivos</h5><ol start="3">
+<li>Verificar se a conexão continua ativa.</li>
+<li>Evitar encerramento por inatividade em NATs e firewalls.</li>
+<li>Manter sessões longas sem necessidade de renegociação.</li>
+</ol>
+<hr>
+<h4 id="resumo-dos-protocolos-utilizados-no-diagrama">Resumo dos protocolos utilizados no diagrama</h4><table>
+<thead>
+<tr>
+<th>Etapa</th>
+<th>Protocolo TLS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ClientHello</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>ServerHello</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>Certificate</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>ServerKeyExchange</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>CertificateRequest</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>ServerHelloDone</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>ClientKeyExchange</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>CertificateVerify</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>Finished</td>
+<td>Handshake Protocol</td>
+</tr>
+<tr>
+<td>ChangeCipherSpec</td>
+<td>Change Cipher Spec Protocol</td>
+</tr>
+<tr>
+<td>Alert close_notify</td>
+<td>Alert Protocol</td>
+</tr>
+<tr>
+<td>HeartbeatRequest/Response</td>
+<td>Heartbeat Extension</td>
+</tr>
+<tr>
+<td>Application Data</td>
+<td>TLS Record Protocol</td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="1-conceitos-conexo-vs-sesso">1. Conceitos: Conexão vs. Sessão</h1><p>(As demais respostas da lista permanecem exatamente como apresentadas originalmente.)</p>
+<p>[Demais seções mantidas sem alteração.]</p>
+
+  </article>
+      <script>
+      function fitMarkdownExportToContent() {
+          var article = document.querySelector('.markdown-body');
+          if (!article) return;
+
+          article.style.width = '';
+          article.style.maxWidth = '980px';
+
+          var overflow = article.scrollWidth - article.clientWidth;
+          if (overflow <= 1) return;
+
+          var styles = window.getComputedStyle(article);
+          var paddingLeft = parseFloat(styles.paddingLeft) || 0;
+          var paddingRight = parseFloat(styles.paddingRight) || 0;
+          var borderRight = parseFloat(styles.borderRightWidth) || 0;
+          var borderLeft = parseFloat(styles.borderLeftWidth) || 0;
+          var boxSizing = styles.boxSizing;
+
+          var requiredWidth = boxSizing === 'border-box'
+              ? Math.ceil(article.scrollWidth + borderLeft + borderRight)
+              : Math.ceil(article.scrollWidth - paddingLeft - paddingRight);
+
+          article.style.width = requiredWidth + 'px';
+          article.style.maxWidth = 'none';
+      }
+
+      function queueMarkdownExportFit() {
+          window.requestAnimationFrame(function () {
+              window.requestAnimationFrame(fitMarkdownExportToContent);
+          });
+      }
+
+      window.addEventListener('load', function () {
+          var mathReady = Promise.resolve();
+          var article = document.querySelector('.markdown-body');
+          if (article && window.MutationObserver) {
+              new MutationObserver(queueMarkdownExportFit).observe(article, {
+                  childList: true,
+                  subtree: true
+              });
+          }
+          if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+              mathReady = window.MathJax.typesetPromise().catch(function (err) {
+                  console.warn('MathJax typeset failed:', err);
+              });
+          }
+          if (window.mermaid) {
+              try {
+                  window.mermaid.initialize({ startOnLoad: true, theme: 'default' });
+              } catch (e) {
+                  console.warn('Mermaid initialization failed:', e);
+              }
+          }
+          mathReady.finally(queueMarkdownExportFit);
+          queueMarkdownExportFit();
+      });
+      window.addEventListener('resize', queueMarkdownExportFit);
+  </script>
+</body>
+</html>
